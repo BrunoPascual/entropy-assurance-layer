@@ -1,0 +1,9 @@
+qiskit==2.6.1
+qiskit-aer==0.18.2
+qiskit-ibm-runtime==0.51.0
+python-dotenv==1.2.4
+numpy==2.5.4
+scipy==1.18.1
+cryptography==50.0.2
+# a adicionar e fixar a versão depois de instalar:
+# pytest, pandas, matplotlib, streamlit, kyber-py, dilithium-py
