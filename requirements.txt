@@ -7,3 +7,4 @@ scipy==1.18.1
 cryptography==50.0.2
 # a adicionar e fixar a versão depois de instalar:
 # pytest, pandas, matplotlib, streamlit, kyber-py, dilithium-py
+matplotlib==3.11.2
