@@ -5,3 +5,4 @@ __pycache__/
 .pytest_cache/
 keys/*.sk
 data/raw/
+data/results/*.png
