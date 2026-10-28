@@ -630,3 +630,4 @@ Uma tarefa está pronta quando:
 - NCSC, tecnologias de segurança quântica: https://www.ncsc.gov.uk/paper/quantum-security-technologies
 
 Confirme os links e as versões de API antes de depender deles; planos, preços e APIs mudam.
++-- scripts/                # plot_bias.py (gr�fico de vi�s por qubit, Dia 2)
