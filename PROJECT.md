@@ -145,7 +145,7 @@ class Source(ABC):
 | `n_bits` | int | Quantidade de bits |
 | `created_at` | str | ISO 8601 em UTC |
 | `params` | dict | Ex.: backend, qubits, shots, job_id, modelo de ruído |
-| `batch_hash` | str | SHA3-256 dos bits empacotados (detecção de replay) |
+| `batch_hash` | str | SHA3-256 de `n_bits` (8 bytes, big-endian) seguido dos bits empacotados com `numpy.packbits` (detecção de replay e de alteração) |
 
 ### 6.3 Fontes
 
@@ -354,6 +354,7 @@ EntropyAssuranceLayer/
 │   ├── __main__.py         # permite "py -3.12 -m eal"
 │   ├── cli.py
 │   ├── config.py           # constantes: α, W, n, ε, orçamento
+│   ├── storage.py          # gravação e leitura de lotes em data/raw/
 │   ├── sources/            # base.py, os_source.py, qpu_sim.py, qpu_ibm.py, faulty.py
 │   ├── health/             # continuous.py, min_entropy.py, stats_tests.py, report.py
 │   ├── extract/            # toeplitz.py, sha3.py
@@ -630,4 +631,4 @@ Uma tarefa está pronta quando:
 - NCSC, tecnologias de segurança quântica: https://www.ncsc.gov.uk/paper/quantum-security-technologies
 
 Confirme os links e as versões de API antes de depender deles; planos, preços e APIs mudam.
-+-- scripts/                # plot_bias.py (gr�fico de vi�s por qubit, Dia 2)
++-- scripts/                # plot_bias.py (gr�fico de vi�s por qubit, Dia 2)
