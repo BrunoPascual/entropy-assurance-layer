@@ -3,7 +3,7 @@
 - **Versão do documento:** 1.0
 - **Data:** 27/10/2026
 - **Autor:** Bruno Pascual
-- **Status:** Dia 1 de 9 (fase de fundação)
+- **Status:** Dia 2 de 9 (concluído)
 - **Documento irmão:** `THREAT_MODEL.md` (modelo de ameaça)
 
 > Este arquivo é a fonte de verdade do projeto. Cole-o no início de cada sessão com a IA.
@@ -571,7 +571,7 @@ Uma tarefa está pronta quando:
 | Dia | Foco | Gate |
 | --- | --- | --- |
 | 1 | Fundação: ambiente, conta IBM, brief, modelo de ameaça, estrutura | `pytest` verde, job de 1 qubit rodou, brief pronto |
-| 2 | Fontes de bits e simulador com ruído | 5 fontes geram 1 milhão de bits cada em menos de 5 min |
+| 2 | Fontes de bits e simulador com ruído | 5 fontes geram 1 milhão de bits cada em menos de 5 min e o gráfico de viés existe |
 | 3 | Testes de saúde e min-entropia | Reprova viesada, travada e replay; aprova `os` |
 | 4 | Extrator, mixer, semente | Pipeline completo no simulador até a semente |
 | 5 | Chaves PQC e recibo | Um comando gera chaves e recibo; outro verifica |
@@ -596,6 +596,9 @@ Uma tarefa está pronta quando:
 6. O simulador é um gerador clássico.
 7. Ambiente sem `.venv` (problema não resolvido no Windows).
 8. Orçamento de QPU limita o tamanho das amostras reais.
+9. O simulador trata os qubits como independentes (cada um é simulado separadamente): não reproduz correlação entre vizinhos (crosstalk) que um chip real pode ter.
+10. O ruído do `qpu_sim` vem de uma calibração fixa do `FakeKingston` (15/04/2026), que pode não refletir o chip hoje; a comparação com o chip real é o E1.
+11. O `NoiseModel.from_backend` do Aer monta o erro de leitura simétrico, o que apaga o viés de um qubit em 50/50; o projeto remonta o erro de forma assimétrica a partir da calibração (`eal/sources/noise.py`).
 
 ---
 
