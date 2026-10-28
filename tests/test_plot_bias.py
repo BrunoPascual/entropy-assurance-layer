@@ -24,3 +24,10 @@ def test_run_creates_png(tmp_path):
     assert path.exists() and path.suffix == ".png"
     assert path.stat().st_size > 5_000
     assert path.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_gate_chart_path_uses_today_and_bias_name():
+    from scripts.gate_dia2 import bias_chart_path
+    p = bias_chart_path("2026-10-28")
+    assert p.name == "2026-10-28_bias_por_qubit.png"
+    assert p.parent.as_posix() == "data/results"

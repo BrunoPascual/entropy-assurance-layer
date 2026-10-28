@@ -9,6 +9,8 @@ Gate: as 5 fontes defeituosas geram 1 milhão de bits cada em menos de 5 minutos
 from __future__ import annotations
 
 import time
+from datetime import date
+from pathlib import Path
 
 from eal import storage
 from eal.sources.faulty import FAULTY_SOURCES
@@ -17,6 +19,12 @@ from eal.sources.qpu_sim import QpuSim
 
 N_BITS = 1_000_000
 LIMIT_SECONDS = 300
+RESULTS_DIR = Path("data/results")
+
+
+def bias_chart_path(day: str | None = None) -> Path:
+    """Caminho esperado do gráfico de viés gerado por scripts.plot_bias no dia."""
+    return RESULTS_DIR / f"{day or date.today().isoformat()}_bias_por_qubit.png"
 
 
 def check(source, session: str = "gate") -> tuple[float, str]:
@@ -42,9 +50,15 @@ def main() -> None:
     for ref in (OsSource(), QpuSim(noise_backend="FakeKingston")):
         sec, name = check(ref)
         print(f"{ref.source_id + ' (ref.)':<20}{sec:>10.3f}  {name}")
-    ok = total < LIMIT_SECONDS
-    print(f"\nGATE DIA 2 (fontes): {'APROVADO' if ok else 'REPROVADO'} "
+    chart = bias_chart_path()
+    chart_ok = chart.exists() and chart.stat().st_size > 5_000
+    ok_time = total < LIMIT_SECONDS
+    print(f"\nFontes: {'OK' if ok_time else 'FORA DO TEMPO'} "
           f"({total:.1f} s de {LIMIT_SECONDS} s); todos os lotes relidos com hash conferido")
+    print(f"Gráfico: {'OK' if chart_ok else 'AUSENTE'} ({chart})"
+          + ("" if chart_ok else "  -> rode: py -3.12 -m scripts.plot_bias"))
+    ok = ok_time and chart_ok
+    print(f"\nGATE DIA 2: {'APROVADO' if ok else 'REPROVADO'}")
 
 
 if __name__ == "__main__":
