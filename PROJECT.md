@@ -597,6 +597,34 @@ Uma tarefa está pronta quando:
 
 ---
 
+<!-- dia3-gate:start -->
+### 16.1 Resultado do gate do Dia 3
+
+Medido em 2026-10-29T20:05:13.471906Z (medido com mudanças sem commit: o `git_commit` do metadado não descreve o código exato). Tabela: `data/results/dia3_health_2026-10-29_200513.csv`, SHA3-256 `aa5ffcae371567b0e15e542300614d0a4ad05d5a06bc14bcddde1bdafc4f8099`.
+
+| Fonte | Leituras | Aprovadas | Situação |
+| --- | --- | --- | --- |
+| `os` | 2 | 2 | ok |
+| `faulty_biased` | 2 | 0 | ok |
+| `faulty_correlated` | 2 | 0 | ok |
+| `faulty_prng` | 2 | 2 | ok |
+| `faulty_replay` | 3 | 1 | ok |
+| `faulty_stuck` | 2 | 0 | ok |
+
+Regras do gate:
+
+- Cumprida: os aprovada. todas as leituras aprovadas.
+- Cumprida: faulty_biased reprovada. todas reprovadas, com APT e limiar de H falhando.
+- Cumprida: faulty_stuck reprovada. todas reprovadas, com RCT falhando.
+- Cumprida: faulty_correlated reprovada. todas reprovadas, com limiar de H falhando.
+- Cumprida: faulty_replay pega por replay. 1ª leitura aprovada; seguintes reprovadas por replay (só por replay se tiverem N bits).
+- Cumprida: faulty_prng passa (limitação T4). todas aprovadas: testes de saída não detectam gerador clássico.
+
+**Achado sobre o gerador clássico.** `faulty_prng` (Mersenne Twister com semente fixa, disfarçado de QPU) passou em todos os testes de saúde e estatísticos, como previsto. Isso não é falha do gate: testes de saída não distinguem um gerador pseudoaleatório bem feito de uma fonte real (T4 e N2 do `THREAT_MODEL.md`). A única defesa contra isso é estrutural: a política do mixer exige pelo menos uma fonte local aprovada e não simulada (seção 6.9). Uma fonte com semente conhecida é previsível para quem a conhece, mesmo passando nos testes; por isso a fonte `os` não pode ser substituída por ela.
+
+**Falso alarme.** A fonte `os` pode ser reprovada em cerca de 3% dos lotes, pela soma das taxas dos três testes estatísticos (p ≥ 0,01). O E2 mede essa taxa com centenas de lotes; a tabela do gate, com duas leituras, não a estima.
+<!-- dia3-gate:end -->
+
 ## 17. Limitações conhecidas
 
 1. Protótipo de pesquisa; não usar para proteger dados reais.
@@ -612,6 +640,15 @@ Uma tarefa está pronta quando:
 11. O `NoiseModel.from_backend` do Aer monta o erro de leitura simétrico, o que apaga o viés de um qubit em 50/50; o projeto remonta o erro de forma assimétrica a partir da calibração (`eal/sources/noise.py`).
 
 ---
+
+### Limitações do Dia 3
+
+- Testes de saúde e estatísticos não detectam gerador clássico de boa qualidade (T4). A defesa é estrutural (fonte local obrigatória na mistura).
+- O replay detecta blocos de 4096 bits idênticos. Não detecta replay transformado (um bit alterado por bloco), replay deslocado para fora de múltiplos de 4096 bits, nem replay menor que um bloco, a menos que o lote inteiro seja idêntico.
+- O estado do detector de replay existe só em memória, durante uma execução. Replay entre execuções não é detectado.
+- O teste de saúde pela H estimada usa limiar 0,9, que é escolha de projeto, não valor derivado de dados.
+- O APT e os estatísticos testam só janelas e blocos completos; bits finais são descartados e registrados em `notes`.
+- Lote menor que 1.000.000 bits: estatísticos inconclusivos, e o lote não é aprovado.
 
 ## 18. Glossário
 
