@@ -26,3 +26,8 @@ MCV_SYMBOL_BITS = 8    # tamanho do simbolo do segundo estimador
 
 # --- Dia 3: teste de saude pela H estimada (escolha de projeto, nao derivada) ---
 H_MIN_HEALTH = 0.9
+
+# --- Dia 3: testes estatisticos do SP 800-22 (PROJECT.md 6.6) ---
+STATS_P_MIN = 0.01          # aprova se p-valor >= 0,01
+STATS_BLOCK_M = 128         # bloco do teste por bloco (padrao do NIST STS)
+STATS_MIN_BITS = 1_000_000  # abaixo disso: inconclusivo, nao aprovado
