@@ -31,3 +31,7 @@ H_MIN_HEALTH = 0.9
 STATS_P_MIN = 0.01          # aprova se p-valor >= 0,01
 STATS_BLOCK_M = 128         # bloco do teste por bloco (padrao do NIST STS)
 STATS_MIN_BITS = 1_000_000  # abaixo disso: inconclusivo, nao aprovado
+
+# --- Dia 3: replay e relatorio de lote ---
+REPLAY_BLOCK_BITS = 4096       # blocos comparados na deteccao de replay
+H_DECLARED_DEFAULT = 1.0     # H declarada usada por RCT e APT
