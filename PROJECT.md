@@ -168,13 +168,13 @@ Seguem a seção 4.4 do NIST SP 800-90B, aplicados a cada lote.
 
 **Parâmetros fixos:**
 
-- Taxa de falso alarme por teste: `α = 2^-20`.
+- Taxa de falso alarme (α) por amostra no RCT e por janela no APT. Valores separados: RCT `α = 2^-40`, APT `α = 2^-20`.
 - `H` = min-entropia por bit declarada ou estimada para a fonte (≤ 1).
 
 **Repetition Count Test (RCT):** detecta bits travados.
 
 - Limite: `C = 1 + ceil(-log2(α) / H)`.
-- Exemplo: com `H = 1`, `C = 21`; com `H = 0,9`, `C = 24`.
+- Exemplo: com `H = 1`, `C = 41`; com `H = 0,9`, `C = 46` (α = 2^-40).
 - Falha se algum valor se repetir `C` ou mais vezes seguidas.
 
 **Adaptive Proportion Test (APT):** detecta viés persistente.
@@ -184,6 +184,10 @@ Seguem a seção 4.4 do NIST SP 800-90B, aplicados a cada lote.
 - Para cada janela: toma o primeiro bit e conta quantas vezes ele aparece na janela; falha se a contagem ≥ `C`.
 
 **Detecção de replay (complementar, não faz parte do SP 800-90B):** guarda o `batch_hash` de cada lote e de blocos de 4096 bits; falha se algum se repetir.
+
+**Justificativa dos α (medida, não suposta).** Num lote de 1.000.000 de bits há cerca de 500 mil sequências testadas pelo RCT. Com `α = 2^-20` e `H = 1` (`C = 21`), o falso alarme por lote fica perto de 38% mesmo para fonte justa, o que inviabiliza o gate. Com `α = 2^-40` (`C = 41`), fica perto de 5 × 10^-7 por lote e o RCT ainda pega o trecho travado de 64 bits. No APT, `α = 2^-20` dá cerca de 8 × 10^-4 de falso alarme por lote (976 janelas) e pega viés p = 0,55. Os dois valores ficam dentro da faixa 2^-40 a 2^-20 do SP 800-90B. Valores em `eal/config.py`.
+
+**Limitação do lote.** O APT só testa janelas completas de 1024 bits. Em 1.000.000 de bits, 576 bits ficam de fora e são registrados em `discarded_bits`.
 
 ### 6.5 Estimativa de min-entropia (`eal/health/min_entropy.py`)
 

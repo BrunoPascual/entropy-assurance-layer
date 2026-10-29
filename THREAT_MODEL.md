@@ -103,7 +103,7 @@ Cada garantia vale **somente** sob as premissas da seção 8.
 
 | ID | Garantia | Condição |
 | --- | --- | --- |
-| G1 | Falhas grosseiras de fonte (bits travados, viés persistente acima do limiar, repetição de lote) são detectadas por lote, com taxa de falso alarme de cerca de `α = 2^-20` por teste, por desenho do teste | Entropia declarada `H` correta para a fonte |
+| G1 | Falhas grosseiras de fonte (bits travados, viés persistente acima do limiar, repetição de lote) são detectadas por lote, com taxa de falso alarme `α = 2^-40` por amostra no RCT e `α = 2^-20` por janela no APT (cerca de 5 × 10^-7 e 8 × 10^-4 por lote de 1 milhão de bits), por desenho do teste | Entropia declarada `H` correta para a fonte |
 | G2 | **Fail-closed:** sem ao menos uma fonte local aprovada e não simulada, nenhuma semente e nenhuma chave são geradas | Política do mixer não alterada |
 | G3 | A semente é imprevisível para quem não conhece a saída da fonte local aprovada, **incluindo o provedor da QPU** | P1, P2, P3 |
 | G4 | Todo recibo é assinado com ML-DSA-65 e encadeado ao anterior; qualquer alteração é detectada pelo `eal verify` | Chave do emissor não comprometida |
