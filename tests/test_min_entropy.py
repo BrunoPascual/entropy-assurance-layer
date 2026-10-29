@@ -193,3 +193,64 @@ def test_results_are_frozen():
     e = estimate_min_entropy(alternating(100))
     with pytest.raises(dataclasses.FrozenInstanceError):
         e.h_estimated = 1.0
+
+
+# ---------- teste de saúde pela H estimada (opção 1) ----------
+
+from eal.config import H_MIN_HEALTH  # noqa: E402
+from eal.health.min_entropy import entropy_health_ok, extractor_entropy  # noqa: E402
+
+
+def test_health_threshold_value_is_0_9():
+    assert H_MIN_HEALTH == 0.9
+
+
+@pytest.mark.parametrize("h", [0.899, 0.8999999, 0.752, 0.609, 0.0])
+def test_health_rejects_below_threshold(h):
+    assert not entropy_health_ok(h)
+
+
+@pytest.mark.parametrize("h", [0.9, 0.9000001, 0.954, 0.963, 1.0])
+def test_health_accepts_at_or_above_threshold(h):
+    assert entropy_health_ok(h)
+
+
+def test_health_boundary_is_inclusive():
+    assert entropy_health_ok(0.9, threshold=0.9)
+    assert not entropy_health_ok(0.8999999999, threshold=0.9)
+
+
+def test_health_rejects_nan_and_inf():
+    with pytest.raises(ValueError):
+        entropy_health_ok(float("nan"))
+    with pytest.raises(ValueError):
+        entropy_health_ok(float("inf"))
+
+
+@pytest.mark.parametrize("h", [True, "0.95", None])
+def test_health_rejects_wrong_type(h):
+    with pytest.raises(TypeError):
+        entropy_health_ok(h)
+
+
+def test_extractor_uses_min_when_estimate_is_lower():
+    assert extractor_entropy(1.0, 0.954) == 0.954
+
+
+def test_extractor_uses_declared_when_declared_is_lower():
+    assert extractor_entropy(0.8, 0.954) == 0.8
+
+
+def test_extractor_never_exceeds_declared():
+    assert extractor_entropy(0.9, 1.0) == 0.9
+
+
+@pytest.mark.parametrize("h_decl, h_est", [(1.1, 0.9), (0.9, -0.1), (float("nan"), 0.9)])
+def test_extractor_rejects_out_of_range(h_decl, h_est):
+    with pytest.raises(ValueError):
+        extractor_entropy(h_decl, h_est)
+
+
+def test_extractor_rejects_wrong_type():
+    with pytest.raises(TypeError):
+        extractor_entropy("1.0", 0.9)

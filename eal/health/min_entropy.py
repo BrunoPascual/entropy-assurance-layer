@@ -16,7 +16,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from eal.config import MCV_SYMBOL_BITS, MCV_Z
+from eal.config import H_MIN_HEALTH, MCV_SYMBOL_BITS, MCV_Z
 
 MIN_BITS = 2 * MCV_SYMBOL_BITS  # pelo menos 2 símbolos para o estimador por byte
 
@@ -114,3 +114,22 @@ def estimate_min_entropy(bits: np.ndarray) -> MinEntropyEstimate:
     if byte.h < bit.h:
         return MinEntropyEstimate(bit, byte, byte.h, "byte")
     return MinEntropyEstimate(bit, byte, bit.h, "bit")
+
+
+def entropy_health_ok(h_estimated: float, threshold: float = H_MIN_HEALTH) -> bool:
+    """True se H estimada >= limiar. Limiar fixo em config.py (escolha de projeto)."""
+    if isinstance(h_estimated, bool) or not isinstance(h_estimated, (int, float)):
+        raise TypeError("h_estimated deve ser número")
+    if not math.isfinite(h_estimated):
+        raise ValueError("h_estimated deve ser finito")
+    return h_estimated >= threshold
+
+
+def extractor_entropy(h_declared: float, h_estimated: float) -> float:
+    """H usada pelo extrator: min(H declarada, H estimada). Nunca maior que a declarada."""
+    for name, h in (("h_declared", h_declared), ("h_estimated", h_estimated)):
+        if isinstance(h, bool) or not isinstance(h, (int, float)):
+            raise TypeError(f"{name} deve ser número")
+        if not math.isfinite(h) or not 0.0 <= h <= 1.0:
+            raise ValueError(f"{name} deve estar em [0, 1], recebido {h}")
+    return min(h_declared, h_estimated)

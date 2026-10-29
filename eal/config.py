@@ -23,3 +23,6 @@ QPU_TOTAL_BUDGET_SECONDS = 600  # 10 minutos por janela de 28 dias (confira no p
 # --- Dia 3: estimador de min-entropia (PROJECT.md 6.5) ---
 MCV_Z = 2.576          # quantil normal do limite superior de 99% (SP 800-90B 6.3.1)
 MCV_SYMBOL_BITS = 8    # tamanho do simbolo do segundo estimador
+
+# --- Dia 3: teste de saude pela H estimada (escolha de projeto, nao derivada) ---
+H_MIN_HEALTH = 0.9
