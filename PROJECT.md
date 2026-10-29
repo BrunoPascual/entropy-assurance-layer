@@ -203,6 +203,13 @@ Usa o **mínimo** de dois estimadores, para ser conservadora:
 
 Esta é uma estimativa simplificada. O projeto **não alega conformidade** com o SP 800-90B. Se houver tempo, compare com a ferramenta oficial de avaliação de entropia do NIST (confirmar disponibilidade no GitHub do NIST antes de usar).
 
+**Uso da min-entropia nos testes (decisão do Dia 3).**
+
+- Os testes RCT e APT usam a **H declarada** da fonte, não a estimada. Usar a estimada afrouxa os limites justamente nas fontes ruins (medido: com H estimada, o travamento de 64 bits passava no RCT).
+- O **teste de saúde pela H estimada** reprova a fonte se `H_estimada < 0,9`. O limiar 0,9 é **escolha de projeto**, não valor derivado: separa a fonte `os` (0,954 a 0,963 em 25 lotes de 1 milhão de bits) das fontes defeituosas medidas (`faulty_correlated` 0,752, `faulty_biased` 0,844, `faulty_stuck` 0,609). Foi fixado antes de existirem dados reais da QPU e não será ajustado depois para aprovar uma fonte.
+- O **extrator** usa `min(H declarada, H estimada)`.
+- O limiar reprova a QPU real se os bits dela tiverem H estimada abaixo de 0,9. Esse é o comportamento esperado (fail-closed), e o relatório deve registrar o resultado, mesmo que seja reprovação.
+
 ### 6.6 Testes estatísticos (`eal/health/stats_tests.py`)
 
 Do NIST SP 800-22, aplicados em lotes de pelo menos 1.000.000 de bits quando houver dados suficientes:
@@ -638,4 +645,4 @@ Uma tarefa está pronta quando:
 - NCSC, tecnologias de segurança quântica: https://www.ncsc.gov.uk/paper/quantum-security-technologies
 
 Confirme os links e as versões de API antes de depender deles; planos, preços e APIs mudam.
-+-- scripts/                # plot_bias.py (gr�fico de vi�s por qubit, Dia 2)
++-- scripts/                # plot_bias.py (gr fico de vi s por qubit, Dia 2)
