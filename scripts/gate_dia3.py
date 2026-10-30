@@ -247,7 +247,7 @@ def _sources() -> list[tuple[str, str, Callable[[], Any]]]:
             from eal.sources.noise import load_fake_backend
 
             out.append(("qpu_sim", "ruído FakeKingston (controle)",
-                        lambda: QpuSim(noise_backend=load_fake_backend())))
+                        lambda: QpuSim(noise_backend="FakeKingston")))
     except ImportError as exc:
         print(f"aviso: qpu_sim não importado ({exc}); segue sem ele")
     out += [(name, "", fabrica) for name, fabrica in sorted(FAULTY_SOURCES.items())]
@@ -306,6 +306,14 @@ def main() -> int:
     back = read_csv(csv_path)  # o gate usa o que foi gravado
     checks = evaluate_gate(back)
     gate_ok = all(c.ok for c in checks)
+    controls_failed = [
+        (r["source_id"] + " " + r.get("variant", "")).strip()
+        for r in rows
+        if r.get("source_id") == "qpu_sim" and r.get("status") != "avaliado"
+    ]
+    if controls_failed:
+        gate_ok = False
+        print("CONTROLE FALHOU (gate reprovado): " + "; ".join(controls_failed))
 
     meta = {
         "format": "eal-dia3-health-table-v1",

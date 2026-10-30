@@ -57,6 +57,7 @@ class QpuSim(Source):
         self.physical_qubits = list(physical_qubits or range(n_qubits))
         if len(self.physical_qubits) != n_qubits:
             raise ValueError("physical_qubits deve ter n_qubits elementos")
+        self._runs = 0  # contador de execuções: cada uma tem semente própria
         self.source_version = (
             f"qpu_sim-0.2.0/qiskit-{qiskit.__version__}/aer-{qiskit_aer.__version__}"
         )
@@ -82,7 +83,10 @@ class QpuSim(Source):
 
     def _run(self, shots: int) -> np.ndarray:
         """Executa e devolve matriz shots x n_qubits (coluna i = physical_qubits[i])."""
-        result = self._sim.run(self._circuits, shots=shots, memory=True).result()
+        seed = self.seed + self._runs
+        self._runs += 1
+        result = self._sim.run(self._circuits, shots=shots, memory=True,
+                               seed_simulator=seed).result()
         if self.noise_backend is None:
             return memory_to_bits(result.get_memory(0), self.n_qubits).reshape(shots, -1)
         cols = [memory_to_bits(result.get_memory(i), 1) for i in range(self.n_qubits)]
