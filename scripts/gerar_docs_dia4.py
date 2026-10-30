@@ -25,6 +25,7 @@ import csv
 import hashlib
 import io
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -40,6 +41,8 @@ PIPELINE = ("<!-- dia4-pipeline:start -->", "<!-- dia4-pipeline:end -->", r"(?m)
 LIMITS = ("<!-- dia4-limitacoes-pipeline:start -->", "<!-- dia4-limitacoes-pipeline:end -->", r"(?m)^## 18\.")
 KINDS = ("ok", "ok_experiment_only", "ok_fail_closed", "DETECTION_MISS", "UNEXPECTED", "VIOLATION")
 REASON_CELL_LIMIT = 110
+ATTENTION_TITLE = "Execuções fora do esperado"
+HEALTH_P_REJECTION = re.compile(r"reprovada pelo teste de saúde: [^|]*\bp = [0-9.eE+-]+ \(< 0\.01\)")
 
 POLICY_OLD = (
     "2. É obrigatório **pelo menos 1 fonte local aprovada e não simulada** (na prática, `os`). "
@@ -110,6 +113,28 @@ def load_resilience(meta_path: Path) -> tuple[dict[str, Any], list[Row]]:
     return meta, rows
 
 
+# ------------------------------------------------------- commit do CSV (git)
+
+
+def _git_first_commit(path: str) -> str:
+    """Lista os commits que adicionaram o arquivo (mais recente primeiro). Falha de git vira erro."""
+    done = subprocess.run(["git", "--no-pager", "log", "--diff-filter=A", "--format=%h", "--", path],
+                          capture_output=True, text=True, check=True, timeout=30)
+    return done.stdout
+
+def csv_commit_line(path: str, runner: Any = None) -> str:
+    """Frase 'CSV versionado em <hash>' a partir do git; vazia se o git não responder."""
+    run = _git_first_commit if runner is None else runner  # resolvido na chamada, para o monkeypatch valer
+    try:
+        lines = [ln.strip() for ln in run(path).splitlines() if ln.strip()]
+
+
+
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return f" CSV versionado em `{lines[-1]}`." if lines else ""
+
+
 # --------------------------------------------------- tabelas e frases do 16.2
 
 
@@ -154,7 +179,7 @@ def sentences(rows: list[Row]) -> list[str]:
     failed = [r for r in outside if r["os_status"] != "mixed"]
     out.append(f"A `os` não entrou na mistura em {len(failed)} de {len(outside)} execuções fora dos cenários em que "
                "ela falha de propósito (reprovação pelos testes de saúde ou falha de leitura). Referência da seção "
-               "16.1: cerca de 3% por lote. Esta contagem não inclui reprovações do stand-in remoto (ver a tabela de atenção).")
+               f"16.1: cerca de 3% por lote. Esta contagem não inclui reprovações do stand-in remoto (ver a tabela «{ATTENTION_TITLE}»).")                 
     bad = [r for r in rows if r["must_exclude"] and "os" not in r["must_exclude"].split(";") and r["os_status"] == "mixed"]
     if bad:
         names = ", ".join(f"`{n}`" for n in dict.fromkeys(r["scenario"] for r in bad))
@@ -176,8 +201,20 @@ def sentences(rows: list[Row]) -> list[str]:
     k1 = _scenario(rows, "K1_keygen_standin")
     if k1:
         usable = sum(r["seed_generated"] is True and r["usable_for_key"] is True for r in k1)
-        unexpected = sum(rs.kind(r["verdict"]) == "UNEXPECTED" for r in k1)
-        out.append(f"K1: semente utilizável em {usable} de {len(k1)} execuções; {unexpected} com UNEXPECTED (ver a tabela de atenção).")
+        odd = [r for r in k1 if rs.kind(r["verdict"]) == "UNEXPECTED"]
+        by_health = sum(bool(HEALTH_P_REJECTION.search(r["not_mixed_reasons"])) for r in odd)
+        cause = ""
+        if odd and by_health == len(odd):
+            who = "Na execução" if len(odd) == 1 else "Em todas"
+            cause = (f" {who}, o motivo registrado é reprovação pelo teste de saúde com p < 0,01 (critério da seção 6.6). "
+                     "Como o stand-in usa bits da `os` (premissa P3), o resultado é compatível com o falso alarme que "
+                     "esse limiar produz por acaso (cerca de 1% por teste em fonte boa), não com defeito do pipeline.")
+
+        elif by_health:
+            cause = (f" Em {by_health} delas, o motivo registrado é reprovação pelo teste de saúde com p < 0,01 "
+                     "(critério da seção 6.6).")
+        out.append(f"K1: semente utilizável em {usable} de {len(k1)} execuções; {len(odd)} com UNEXPECTED "
+                   f"(ver a tabela «{ATTENTION_TITLE}»).{cause}")
     c5c = _scenario(rows, "C5c_os_down_experiment")
     if c5c:
         marked = sum(r["seed_generated"] is True and r["usable_for_key"] is False for r in c5c)
@@ -191,13 +228,14 @@ def sentences(rows: list[Row]) -> list[str]:
 # -------------------------------------------------------------------- blocos
 
 
-def build_gate(meta: dict[str, Any], rows: list[Row]) -> str:
+def build_gate(meta: dict[str, Any], rows: list[Row], commit_runner: Any = None) -> str:
     gate = meta["gate"]
     params = meta["params"]
     lines = [GATE[0], "### 16.2 Resultado do gate do Dia 4 (resiliência do pipeline)", "",
              f"Medido em {meta['created_at']} (commit `{str(meta['git_commit'])[:7]}`"
              + (", **medido com mudanças sem commit: o `git_commit` não descreve o código exato**" if meta.get("git_dirty") else "")
-             + f"). Tabela: `{meta['csv']}`, SHA3-256 `{meta['csv_sha3_256']}`. "
+             + f"). Tabela: `{meta['csv']}`, SHA3-256 `{meta['csv_sha3_256']}`."
+             + csv_commit_line(str(meta["csv"]).replace("\\", "/"), runner=commit_runner) + " "
              f"Parâmetros: {params['reps']} repetições por cenário, lotes de {g.bits(params['n_bits'])} bits, "
              f"backend de ruído `{params['noise_backend']}`; {meta['n_rows']} execuções. "
              "Gerado por `scripts/gerar_docs_dia4.py`; resumo, gate e contagem de falsos alarmes foram recalculados do CSV.", "",
@@ -210,7 +248,7 @@ def build_gate(meta: dict[str, Any], rows: list[Row]) -> str:
     lines += ["", "**Vereditos por cenário.** `DETECTION_MISS` é uma fonte defeituosa que passou nos testes (medida do E2, "
               "não falha do pipeline); `UNEXPECTED`, uma fonte que deveria entrar e não entrou; `VIOLATION`, política ou "
               "isolamento quebrados.", "", *counts_table(rows), "",
-              "**Execuções fora do esperado** (tudo que não é `ok`, exceto o fail-closed previsto dos cenários C5):", "",
+              f"**{ATTENTION_TITLE}** (tudo que não é `ok`, exceto o fail-closed previsto dos cenários C5):", "",
               *attention_table(rows), "", "**Leitura dos resultados** (frases geradas do CSV):",
               *[f"- {s}" for s in sentences(rows)], "",
               "**O que este gate não mostra.** A fonte \"remota\" dos cenários `keygen` é um stand-in (bits da `os` com rótulo "

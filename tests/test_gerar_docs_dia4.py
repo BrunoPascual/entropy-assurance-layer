@@ -392,3 +392,68 @@ def test_main_warns_about_missing_tree_but_still_writes(tmp_path: Path, monkeypa
     run_main(monkeypatch, "--resilience-meta", str(meta_path), "--project", str(project))
     assert "AVISO: árvore de pastas: linha de storage.py" in capsys.readouterr().err
     assert "### 16.2" in project.read_text(encoding="utf-8")
+
+# ------------------------------------------- referências a tabela e causa do K1
+
+K1_REAL_REASON = (
+    "ibm_standin: reprovada pelo teste de saúde: block: p = 0.00881 (< 0.01) | "
+    "sem saída de extração (lote curto ou entropia insuficiente)"
+)
+
+
+def k1_unexpected(reason: str) -> dict[str, Any]:
+    return row("K1_keygen_standin", 2, mode="keygen", usable_for_key=True,
+               statuses="os:mixed;ibm_standin:excluded", mixed="os", not_mixed_reasons=reason,
+               verdict="UNEXPECTED: não entrou na mistura: ibm_standin")
+
+
+def test_sentences_do_not_point_to_a_missing_table() -> None:
+    text = "\n".join(gd.sentences(good_rows() + [k1_unexpected(K1_REAL_REASON)]))
+    assert "tabela de atenção" not in text
+    assert text.count("tabela «Execuções fora do esperado»") == 2  # frase da `os` e frase do K1
+
+
+def test_gate_block_prints_the_table_title_the_sentences_cite(tmp_path: Path) -> None:
+    meta, rows = gd.load_resilience(write_source(tmp_path))
+    assert "**Execuções fora do esperado**" in gd.build_gate(meta, rows)
+
+
+def test_k1_sentence_states_the_cause_only_when_the_data_shows_it() -> None:
+    with_cause = "\n".join(gd.sentences(good_rows() + [k1_unexpected(K1_REAL_REASON)]))
+    assert "reprovação pelo teste de saúde" in with_cause and "p < 0,01" in with_cause
+    other = "\n".join(gd.sentences(good_rows() + [k1_unexpected("ibm_standin: leitura falhou")]))
+    assert "reprovação pelo teste de saúde" not in other and "p < 0,01" not in other
+    assert "1 com UNEXPECTED" in other  # a contagem continua sendo dita
+
+# ------------------------------------------------ commit do CSV (git, injetável)
+
+
+def test_csv_commit_comes_from_git_and_is_omitted_when_unknown() -> None:
+    path = "data/results/dia4_resilience_2026-10-30_135203.csv"
+    assert gd.csv_commit_line(path, runner=lambda p: "2996df2\n") == " CSV versionado em `2996df2`."
+    assert gd.csv_commit_line(path, runner=lambda p: "") == ""
+    assert gd.csv_commit_line(path, runner=lambda p: "a1b2c3d\n2996df2\n") == " CSV versionado em `2996df2`."
+
+    def boom(p: str) -> str:
+        raise OSError("git ausente")
+
+    assert gd.csv_commit_line(path, runner=boom) == ""
+
+def test_gate_block_uses_the_injected_commit_runner(tmp_path: Path) -> None:
+    meta, rows = gd.load_resilience(write_source(tmp_path))
+    block = gd.build_gate(meta, rows, commit_runner=lambda p: "2996df2\n")
+    assert "CSV versionado em `2996df2`." in block
+    block = gd.build_gate(meta, rows, commit_runner=lambda p: "")
+    assert "CSV versionado em" not in block
+
+def test_k1_sentence_is_worded_for_one_execution_and_as_compatible() -> None:
+    text = "\n".join(gd.sentences(good_rows() + [k1_unexpected(K1_REAL_REASON)]))
+    assert "Em todas" not in text
+    assert "Na execução, o motivo registrado" in text
+    assert "compatível com o falso alarme" in text
+    assert "cerca de 1% por teste em fonte boa" in text
+
+@pytest.fixture(autouse=True)
+def _no_git(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Os testes de gate não chamam o git; a frase do commit só aparece onde o runner é injetado."""
+    monkeypatch.setattr(gd, "_git_first_commit", lambda path: "")

@@ -487,6 +487,7 @@ EntropyAssuranceLayer/
 │   ├── receipts/           # recibos e chain.jsonl
 │   └── logs/               # qpu_usage.csv
 ├── keys/                   # chave do emissor (.sk no .gitignore)
+├── scripts/                # geração de documentos e análises (gerar_docs_dia4.py, resilience_dia4.py, plot_bias.py, …)
 └── scratch/                # testes soltos: teste_qiskit.py, teste_ibm.py
 ```
 
@@ -747,7 +748,7 @@ Limitações desta medição:
 <!-- dia4-gate:start -->
 ### 16.2 Resultado do gate do Dia 4 (resiliência do pipeline)
 
-Medido em 2026-10-30T13:52:03.537145+00:00 (commit `d98e8bb`). Tabela: `data/results/dia4_resilience_2026-10-30_135203.csv`, SHA3-256 `e8b23bb9f44ab1995063420eb7cf6b57dfa8499a6e74b1f7ec8e70ea4c0c5dc6`. Parâmetros: 5 repetições por cenário, lotes de 1.000.000 bits, backend de ruído `FakeKingston`; 60 execuções. Gerado por `scripts/gerar_docs_dia4.py`; resumo, gate e contagem de falsos alarmes foram recalculados do CSV.
+Medido em 2026-10-30T13:52:03.537145+00:00 (commit `d98e8bb`). Tabela: `data/results/dia4_resilience_2026-10-30_135203.csv`, SHA3-256 `e8b23bb9f44ab1995063420eb7cf6b57dfa8499a6e74b1f7ec8e70ea4c0c5dc6`. CSV versionado em `2996df2`. Parâmetros: 5 repetições por cenário, lotes de 1.000.000 bits, backend de ruído `FakeKingston`; 60 execuções. Gerado por `scripts/gerar_docs_dia4.py`; resumo, gate e contagem de falsos alarmes foram recalculados do CSV.
 
 **Regras do gate.**
 - Nenhuma execução com VIOLATION em nenhum cenário.
@@ -781,11 +782,11 @@ Medido em 2026-10-30T13:52:03.537145+00:00 (commit `d98e8bb`). Tabela: `data/res
 | `K1_keygen_standin` | 2 | `os:mixed;ibm_standin:excluded` | UNEXPECTED: não entrou na mistura: ibm_standin | ibm_standin: reprovada pelo teste de saúde: block: p = 0.00881 (< 0.01) / sem saída de extração (lote curto ou... |
 
 **Leitura dos resultados** (frases geradas do CSV):
-- A `os` não entrou na mistura em 2 de 45 execuções fora dos cenários em que ela falha de propósito (reprovação pelos testes de saúde ou falha de leitura). Referência da seção 16.1: cerca de 3% por lote. Esta contagem não inclui reprovações do stand-in remoto (ver a tabela de atenção).
+- A `os` não entrou na mistura em 2 de 45 execuções fora dos cenários em que ela falha de propósito (reprovação pelos testes de saúde ou falha de leitura). Referência da seção 16.1: cerca de 3% por lote. Esta contagem não inclui reprovações do stand-in remoto (ver a tabela «Execuções fora do esperado»).
 - Em 19 execuções com fontes defeituosas ou indisponíveis e a `os` aprovada (`C1_stuck`, `C2_biased_correlated`, `C3_replay/second`, `C4_remote_down`), nenhuma fonte defeituosa entrou na mistura.
 - A `faulty_prng` entrou na mistura em 5 de 5 execuções com a `os` aprovada (C6): testes de saída não distinguem um gerador clássico bom (limitação T4).
 - Em `keygen`, com a `os` fora (leitura falha ou lote adulterado) e a remota no ar, a semente foi gerada em 0 de 10 execuções (esperado: 0; G2).
-- K1: semente utilizável em 5 de 5 execuções; 1 com UNEXPECTED (ver a tabela de atenção).
+- K1: semente utilizável em 5 de 5 execuções; 1 com UNEXPECTED (ver a tabela «Execuções fora do esperado»). Na execução, o motivo registrado é reprovação pelo teste de saúde com p < 0,01 (critério da seção 6.6). Como o stand-in usa bits da `os` (premissa P3), o resultado é compatível com o falso alarme que esse limiar produz por acaso (cerca de 1% por teste em fonte boa), não com defeito do pipeline.
 - C5c: em `experiment`, com a `os` fora, a `qpu_sim` sozinha gerou semente marcada como inutilizável em 5 de 5 execuções.
 - Execuções com VIOLATION (política ou isolamento do pipeline quebrados): 0.
 
@@ -882,4 +883,4 @@ Medido em 2026-10-30T13:52:03.537145+00:00 (commit `d98e8bb`). Tabela: `data/res
 - NCSC, tecnologias de segurança quântica: https://www.ncsc.gov.uk/paper/quantum-security-technologies
 
 Confirme os links e as versões de API antes de depender deles; planos, preços e APIs mudam.
-+-- scripts/                # plot_bias.py (gr fico de vi s por qubit, Dia 2)
+
