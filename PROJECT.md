@@ -367,42 +367,51 @@ Determinística a partir da semente, com separação de domínio:
 
 **Chave do emissor:** um par ML-DSA-65 separado, gerado uma vez a partir da fonte `os`. A chave privada fica em `keys/issuer_ml_dsa_65.sk` (no `.gitignore`); a pública em `keys/issuer_ml_dsa_65.pk`.
 
-**Exemplo de recibo:**
+**Exemplo de recibo** (ilustrativo e abreviado: "…" marca o que foi omitido; a forma exata do corpo vem de `build_receipt_body` e é validada por `validate_body`). Uma fonte simulada nunca aparece num recibo, nem excluída: o `validate_body` recusa.
 
 ```json
 {
   "eal_version": "0.1.0",
-  "receipt_id": "3f2b1c9e-0000-0000-0000-000000000000",
-  "created_at": "2026-10-28T14:03:12Z",
+  "receipt_id": "uuid5 do seed_hash, canônico, em minúsculas",
+  "created_at": "2026-10-28T14:03:12+00:00",
   "mode": "keygen",
-  "prev_receipt_hash": "sha3-256 do recibo anterior, ou 64 zeros no primeiro",
+  "prev_receipt_hash": "sha3-256 do recibo anterior (com assinatura), ou 64 zeros no primeiro",
+  "software": {"python": "3.12.10", "kyber-py": "1.2.0", "dilithium-py": "1.5.1", "numpy": "…", "scipy": "…"},
   "sources": [
     {
       "source_id": "os",
       "source_type": "os",
+      "source_version": "0.1.0",
+      "status": "mixed",
+      "batch_id": "…",
+      "batch_hash": "…",
       "is_local": true,
       "is_simulated": false,
-      "batch_hash": "…",
-      "n_bits": 1048576,
-      "health": {"rct_pass": true, "apt_pass": true, "replay_pass": true, "h_estimated": 0.998, "stats": {"monobit": 0.41, "block": 0.73, "runs": 0.22}},
-      "approved": true
+      "approved": true,
+      "reasons": [],
+      "health": {"…": "HealthReport.to_dict() (seção 6.7)"},
+      "extraction": {"seed_hash": "sha3-256 da semente Toeplitz DESTA fonte", "…": "ExtractionResult.to_dict()"}
     },
     {
       "source_id": "ibm_kingston",
       "source_type": "qpu_ibm",
+      "source_version": "…",
+      "status": "excluded",
+      "batch_id": "…",
+      "batch_hash": "…",
       "is_local": false,
       "is_simulated": false,
-      "params": {"job_id": "…", "qubits": 156, "shots": 4096},
-      "batch_hash": "…",
+      "approved": false,
+      "reasons": ["motivo da reprovação"],
       "health": {"…": "…"},
-      "approved": true
+      "extraction": null
     }
   ],
-  "extractor": {"type": "toeplitz", "n": 2048, "epsilon_log2": -64, "seed_hash": "…"},
-  "mixer": {"type": "sha3-512", "inputs": ["ibm_kingston", "os"], "policy": "min_local_non_simulated=1"},
+  "extractor": {"type": "toeplitz", "n": 2048, "epsilon_log2": -64},
+  "mixer": {"…": "MixResult.to_dict(): modo, usable_for_key, política, seed_hash, fontes incluídas e excluídas; nenhum byte de semente"},
   "seed_hash": "sha3-256 da semente",
   "keys": {"ml_kem_768_pk_hash": "…", "ml_dsa_65_pk_hash": "…"},
-  "limitations": ["prototype", "no_sp800_90b_claim", "chsh_is_sanity_check_only"],
+  "limitations": ["prototype", "no_sp800_90b_claim", "no_quantum_origin_claim", "chsh_is_sanity_check_only", "pqc_pure_python_not_constant_time", "issuer_key_unencrypted_on_disk"],
   "signature": {"alg": "ML-DSA-65", "issuer_pk_hash": "…", "value": "base64…"}
 }
 ```
@@ -411,12 +420,22 @@ Determinística a partir da semente, com separação de domínio:
 
 1. O recibo contém **somente hashes**, nunca a semente nem chaves privadas.
 2. A assinatura cobre o JSON canônico de todos os campos exceto `signature` (chaves ordenadas, sem espaços, UTF-8).
-3. `prev_receipt_hash` encadeia os recibos; o log fica em `data/receipts/chain.jsonl`.
+3. `prev_receipt_hash` encadeia os recibos (hash do recibo anterior COMPLETO, com assinatura); o log fica em `data/receipts/chain.jsonl` e é descrito logo abaixo.
 4. Verificação (`eal verify`): recalcula o JSON canônico, confere a assinatura com a chave pública do emissor e confere o encadeamento.
 
 **Construtor do recibo (Dia 5, etapa 2B, `eal/receipt/builder.py`).** Monta o corpo do recibo a partir do `PipelineResult`, das `DerivedKeys` e dos objetos `Source`. Cada fonte traz `source_type`, `source_version`, `status`, `batch_id`, `batch_hash` (o `input_hash` do lote), flags, `approved`, motivos, o `HealthReport` e os metadados da extração, incluindo o `seed_hash` da semente Toeplitz daquela fonte. O bloco `extractor` de topo traz só tipo, `n` e `epsilon_log2`. O `receipt_id` é UUID5 do `seed_hash`. As chaves são re-derivadas da semente e conferidas. Fontes que falharam entram com `approved: false` e o motivo, sem mensagem de exceção.
 
 **Chave do emissor.** `xi = SHAKE256("EAL-v1|issuer|ML-DSA-65|" ‖ semente, 32 bytes)`, a partir de uma execução `keygen` validada pelo mixer.
+
+**Log encadeado (Dia 5, etapa 3, `eal/receipt/chain.py`).** API: `append_receipt(receipt, issuer_pk, directory) -> Path`, `verify_chain(directory, issuer_pk, *, expected_head=None) -> ChainResult(ok, reasons, length, head)`, `chain_head(directory, issuer_pk)` e `ChainError`. O nome do log é `RECEIPT_CHAIN_NAME = "chain.jsonl"` em `eal/config.py`.
+
+*Formato.* `<pasta>/chain.jsonl` tem uma linha por recibo; cada linha é o JSON canônico do recibo completo seguido de `\n`, gravada em modo binário (sem `\r\n`, o que importa no Windows com `core.autocrlf`). Cada recibo também vai para `<pasta>/<receipt_id>.json`, com os mesmos bytes da linha, para o `eal verify` receber um arquivo só. O log é o registro oficial; o arquivo individual é uma cópia conferida contra ele.
+
+*Gravação.* `append_receipt` recusa com `ChainError`, sem gravar nada, se: a chave pública do emissor for inválida; a cadeia existente for inválida (fail-closed: log corrompido também recusa novas gravações); o recibo for inválido; o `prev_receipt_hash` não for a cabeça da cadeia (`GENESIS_PREV_HASH` com o log vazio); o `receipt_id` não for o `uuid5` do `seed_hash`; o `receipt_id` já estiver no log; ou o `<receipt_id>.json` já existir. A pasta só é criada depois que o recibo passa em todas as conferências. A ordem é: primeiro a linha (modo `ab`, `flush` e `fsync`), depois o `<receipt_id>.json` (modo `xb`, que nunca sobrescreve, com `fsync`). Se a segunda gravação falhar, a linha fica no log, `append_receipt` levanta `ChainError` e o `verify_chain` acusa "arquivo individual ausente" (a linha vence o arquivo).
+
+*Verificação.* `verify_chain` não levanta exceção por causa do conteúdo dos arquivos. Confere, por linha: linha vazia; JSON inválido (inclui chave repetida, NaN, valor que não é objeto e UTF-8 inválido); forma canônica; `verify_receipt` com a MESMA chave pública do emissor para a cadeia toda (uma chave por cadeia); `receipt_id` único e igual ao `uuid5` do `seed_hash`; e o elo (`prev_receipt_hash` igual ao hash da linha anterior). Depois confere o arquivo individual de cada linha (ausente ou diferente), arquivos `.json` sem linha no log, última linha sem `\n` e, se `expected_head` for informado, a cabeça da cadeia. Depois de uma linha ilegível, o elo da linha seguinte não é verificável e não gera acusação extra. Outros arquivos da pasta (como `.gitkeep`) são ignorados. As mensagens trazem só números de linha e contagens, nunca o conteúdo do recibo.
+
+*Testes.* `tests/test_receipt_chain.py` (79 testes, em pasta temporária), `tests/test_receipt_chain_pipeline.py` (4 testes, com duas execuções reais do pipeline e uma fonte determinística de teste) e `scripts/mutacoes_chain.py` (55 mutações manuais do `chain.py`, 55 mortas). Isso mostra que os testes pegam esses erros, não que o módulo esteja correto.
 
 ### 6.12 Linha de comando (`eal/cli.py`)
 
@@ -479,7 +498,7 @@ EntropyAssuranceLayer/
 │   ├── extract/            # blocks.py, budget.py, toeplitz.py, sha3.py
 │   ├── mix/                # mixer.py
 │   ├── pqc/                # keygen.py
-│   └── receipt/            # schema.py, sign.py, verify.py, chain.py
+│   └── receipt/            # schema.py, sign.py, verify.py, builder.py, chain.py
 ├── experiments/            # e1_quality.py … e5_chsh.py
 ├── dashboard/
 │   └── app.py
@@ -879,6 +898,18 @@ Medido em 2026-10-30T13:52:03.537145+00:00 (commit `d98e8bb`). Tabela: `data/res
 - O recibo é verificável por este código em Python; o JSON canônico com números de ponto flutuante não foi testado contra um verificador em outra linguagem.
 - O teste de integração usa uma fonte determinística (SHAKE256) no lugar da `os`, para não falhar por acaso; ela não é fonte de entropia e só existe nos testes.
 - A chave do emissor depende só da fonte `os` (P3) e fica em disco sem cifragem (N11).
+
+### Limitações do Dia 5 (etapa 3: log encadeado)
+
+- Não há trava contra duas gravações simultâneas: dois processos podem ler a mesma cabeça e gravar dois recibos com o mesmo `prev_receipt_hash`. O `verify_chain` acusa isso depois, mas a gravação não é impedida. O escopo do protótipo é um usuário (THREAT_MODEL, seção 1).
+- Apagar o ÚLTIMO recibo (ou truncar o fim do log) deixa uma cadeia válida. Só a cabeça guardada fora do log (`expected_head`) denuncia, e o protótipo ainda não guarda essa cabeça em lugar nenhum.
+- Quem tem a chave privada do emissor e acesso ao disco pode refazer a cadeia inteira com assinaturas válidas (N11, resíduo de T9).
+- Uma chave de emissor por cadeia, sem rotação: trocar a chave exige começar outra cadeia.
+- A gravação em dois arquivos não é atômica. Se o processo cair entre a linha e o `<receipt_id>.json`, o log fica com uma linha sem arquivo e passa a recusar novas gravações (fail-closed) até uma intervenção manual; não há comando de reparo.
+- O `fsync` pede ao sistema operacional que grave no disco; o comportamento em queda de energia não foi testado.
+- O `created_at` é informado por quem emite o recibo e não é conferido (nem a ordem entre recibos).
+- O teste de integração da cadeia usa a mesma fonte determinística de teste da etapa 2 no lugar da `os`; ela não é fonte de entropia.
+- Mutações: 55 mutações manuais do `chain.py` foram todas detectadas (`scripts/mutacoes_chain.py`); isso mostra que os testes pegam esses erros, não que o módulo esteja correto.
 
 ## 18. Glossário
 

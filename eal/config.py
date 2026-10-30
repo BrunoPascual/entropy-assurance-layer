@@ -58,6 +58,7 @@ DSA_SIG_BYTES: int = 3309
 RECEIPT_CTX: bytes = b"EAL-v1|receipt"  # contexto ML-DSA (FIPS 204) das assinaturas de recibo
 RECEIPT_SIG_ALG: str = "ML-DSA-65"
 GENESIS_PREV_HASH: str = "0" * 64  # prev_receipt_hash do primeiro recibo
+RECEIPT_CHAIN_NAME: str = "chain.jsonl"  # log encadeado dos recibos (Dia 5, etapa 3)
 RECEIPT_REQUIRED_LIMITATIONS: tuple[str, ...] = (
     "prototype",
     "no_sp800_90b_claim",
