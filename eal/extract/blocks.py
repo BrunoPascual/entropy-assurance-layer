@@ -128,6 +128,7 @@ class ExtractionResult:
     bits: np.ndarray = field(repr=False, compare=False)
     seed_hash: str | None = None
     notes: tuple[str, ...] = ()
+    input_hash: str | None = None  # hash_bits dos bits de entrada: amarra a saída ao lote
 
     @property
     def n_output_bits(self) -> int:
@@ -156,5 +157,6 @@ class ExtractionResult:
             "n_output_bits": self.n_output_bits,
             "discarded_bits": self.discarded_bits,
             "seed_hash": self.seed_hash,
+            "input_hash": self.input_hash,
             "notes": list(self.notes),
         }

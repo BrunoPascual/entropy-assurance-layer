@@ -16,7 +16,7 @@ import hashlib
 import numpy as np
 
 from eal.config import EXTRACTOR_EPSILON_LOG2, EXTRACTOR_INPUT_BITS
-from eal.extract.blocks import ExtractionResult, plan_extraction
+from eal.extract.blocks import ExtractionResult, hash_bits, plan_extraction
 
 SHA3_EXTRACT_DOMAIN = b"EAL-v1|sha3-extract|"
 
@@ -62,4 +62,5 @@ def extract_sha3(
         bits=out,
         seed_hash=None,
         notes=notes,
+        input_hash=hash_bits(bits),
     )

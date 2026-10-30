@@ -68,11 +68,13 @@ def toeplitz_apply(blocks: np.ndarray, seed: np.ndarray, m: int) -> np.ndarray:
     return (product.astype(np.int32) & 1).astype(np.uint8)
 
 
-def _check_seed_source(seed_source: SeedSource, bits: np.ndarray, seed: np.ndarray) -> None:
+def _check_seed_source(
+    seed_source: SeedSource, bits: np.ndarray, seed: np.ndarray, input_hash: str
+) -> None:
     """Recusa semente simulada, não local ou reaproveitada dos próprios bits extraídos."""
     if not seed_source.is_local or seed_source.is_simulated:
         raise ValueError("semente deve vir de fonte local e não simulada")
-    if hash_bits(validate_bits(seed_source.bits)) == hash_bits(bits):
+    if hash_bits(validate_bits(seed_source.bits)) == input_hash:
         raise ValueError("semente idêntica ao lote de entrada")
     if seed.size <= bits.size and np.array_equal(seed, bits[: seed.size]):
         raise ValueError("semente coincide com o início do lote de entrada")
@@ -93,9 +95,10 @@ def extract_toeplitz(
     A semente vem de uma leitura separada e local; seu SHA3-256 vai no resultado.
     """
     plan = plan_extraction(bits, h_used, n, epsilon_log2)
+    input_hash = hash_bits(bits)
     if plan.m == 0:
         empty = np.zeros(0, dtype=np.uint8)
-        return _result(plan, 0, empty, None)
+        return _result(plan, 0, empty, None, input_hash)
     if input_batch_id is not None and input_batch_id == seed_source.batch_id:
         raise ValueError("semente e lote de entrada têm o mesmo batch_id")
     need = n + plan.m - 1
@@ -103,12 +106,14 @@ def extract_toeplitz(
     if seed_all.size < need:
         raise ValueError(f"semente curta: precisa de {need} bits, veio {seed_all.size}")
     seed = seed_all[:need]
-    _check_seed_source(seed_source, bits, seed)
+    _check_seed_source(seed_source, bits, seed, input_hash)
     out = toeplitz_apply(plan.blocks, seed, plan.m).reshape(-1)
-    return _result(plan, plan.blocks.shape[0], out, hash_bits(seed))
+    return _result(plan, plan.blocks.shape[0], out, hash_bits(seed), input_hash)
 
 
-def _result(plan: Any, n_blocks: int, out: np.ndarray, seed_hash: str | None) -> ExtractionResult:
+def _result(
+    plan: Any, n_blocks: int, out: np.ndarray, seed_hash: str | None, input_hash: str
+) -> ExtractionResult:
     return ExtractionResult(
         extractor_type="toeplitz",
         guarantee="leftover_hash_lemma",
@@ -122,4 +127,5 @@ def _result(plan: Any, n_blocks: int, out: np.ndarray, seed_hash: str | None) ->
         bits=out,
         seed_hash=seed_hash,
         notes=plan.notes,
+        input_hash=input_hash,
     )

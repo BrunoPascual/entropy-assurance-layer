@@ -16,6 +16,7 @@ EXTRACTOR_EPSILON_LOG2 = -64  # erro do extrator: 2**-64
 SEED_BYTES = 64
 MIX_DOMAIN = b"EAL-v1-mix"
 MIN_LOCAL_NON_SIMULATED_SOURCES = 1  # política fail-closed
+MIN_LOCAL_SOURCES_EXPERIMENT = 1     # experiment: fonte local aprovada, simulada permitida
 
 # --- Orçamento de QPU (segundos de execução no chip) ---
 QPU_TOTAL_BUDGET_SECONDS = 600  # 10 minutos por janela de 28 dias (confira no painel da IBM)

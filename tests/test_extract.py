@@ -340,3 +340,12 @@ def test_sha3_refusals_and_low_entropy() -> None:
         sha3_extract_block(np.zeros(2047, dtype=np.uint8), 10)
     with pytest.raises(ValueError):
         sha3_extract_block(np.zeros(2048, dtype=np.uint8), 0)
+
+
+def test_both_extractors_record_input_hash() -> None:
+    bits = det_bits("ih", 2048 * 2)
+    t = extract_toeplitz(bits, 0.9, FakeSeedSource(det_bits("ih-seed", 4000)))
+    s = extract_sha3(bits, 0.9)
+    low = extract_toeplitz(bits, 128 / 2048, FakeSeedSource(det_bits("x", 10)))
+    assert t.input_hash == s.input_hash == low.input_hash == hash_bits(bits)
+    assert t.to_dict()["input_hash"] == hash_bits(bits)
