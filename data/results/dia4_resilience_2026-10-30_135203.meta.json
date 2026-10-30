@@ -1,0 +1,71 @@
+{
+  "script": "scripts/resilience_dia4.py",
+  "created_at": "2026-10-30T13:52:03.537145+00:00",
+  "git_commit": "d98e8bb571e459909d4708e53585522504eeb176",
+  "git_dirty": false,
+  "python": "3.12.10",
+  "numpy": "2.5.4",
+  "params": {
+    "reps": 5,
+    "n_bits": 1000000,
+    "noise_backend": "FakeKingston"
+  },
+  "csv": "data/results/dia4_resilience_2026-10-30_135203.csv",
+  "csv_sha3_256": "e8b23bb9f44ab1995063420eb7cf6b57dfa8499a6e74b1f7ec8e70ea4c0c5dc6",
+  "n_rows": 60,
+  "verdicts_by_scenario": {
+    "BASE": {
+      "ok": 4,
+      "ok_experiment_only": 1
+    },
+    "BASE_NOISE": {
+      "ok": 5
+    },
+    "C1_stuck": {
+      "ok": 5
+    },
+    "C2_biased_correlated": {
+      "ok": 4,
+      "ok_fail_closed": 1
+    },
+    "C3_replay/first": {
+      "ok": 5
+    },
+    "C3_replay/second": {
+      "ok": 5
+    },
+    "C5c_os_down_experiment": {
+      "ok_experiment_only": 5
+    },
+    "C6_prng": {
+      "ok": 5
+    },
+    "K1_keygen_standin": {
+      "ok": 4,
+      "UNEXPECTED": 1
+    },
+    "C4_remote_down": {
+      "ok": 5
+    },
+    "C5a_os_down": {
+      "ok_fail_closed": 5
+    },
+    "C5b_os_tampered": {
+      "ok_fail_closed": 5
+    }
+  },
+  "os_false_alarms": 2,
+  "gate": {
+    "ok": true,
+    "problems": []
+  },
+  "notes": [
+    "experiment: as faulty_* são simuladas e o mixer as recusa em keygen; K1, C4, C5a e C5b rodam em keygen",
+    "ok_experiment_only: em experiment, uma fonte local simulada basta e a semente sai marcada como inutilizável",
+    "a fonte remota dos cenários keygen é um stand-in (bits da os com rótulo remoto), não a QPU da IBM",
+    "DETECTION_MISS não é falha do pipeline: é uma fonte defeituosa que passou nos testes (medida do E2)",
+    "a os pode ser reprovada por falso alarme (~3% por lote); isso aparece como ok_fail_closed e em os_false_alarms",
+    "C5b usa uma os adulterada (trecho de zeros); se o RawBatch não puder ser copiado com bits novos, o cenário aparece como read_failed",
+    "o CSV guarda só o SHA3-256 da semente (seed_hash); nenhuma semente nem bit é gravado"
+  ]
+}
