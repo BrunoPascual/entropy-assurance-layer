@@ -51,3 +51,20 @@ DSA_DOMAIN: bytes = b"EAL-v1|ML-DSA-65|"
 # Tamanhos do material interno exigido pelos padrões.
 KEM_SEED_BYTES: int = 64  # d || z, FIPS 203
 DSA_SEED_BYTES: int = 32  # xi, FIPS 204
+
+# --- Recibo (Dia 5, PROJECT.md seção 6.11) ---
+DSA_PK_BYTES: int = 1952
+DSA_SIG_BYTES: int = 3309
+RECEIPT_CTX: bytes = b"EAL-v1|receipt"  # contexto ML-DSA (FIPS 204) das assinaturas de recibo
+RECEIPT_SIG_ALG: str = "ML-DSA-65"
+GENESIS_PREV_HASH: str = "0" * 64  # prev_receipt_hash do primeiro recibo
+RECEIPT_REQUIRED_LIMITATIONS: tuple[str, ...] = (
+    "prototype",
+    "no_sp800_90b_claim",
+    "no_quantum_origin_claim",
+    "chsh_is_sanity_check_only",
+    "pqc_pure_python_not_constant_time",
+    "issuer_key_unencrypted_on_disk",
+)
+ISSUER_SK_NAME: str = "issuer_ml_dsa_65.sk"
+ISSUER_PK_NAME: str = "issuer_ml_dsa_65.pk"
