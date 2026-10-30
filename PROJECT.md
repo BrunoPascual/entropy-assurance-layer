@@ -525,6 +525,10 @@ data/raw/
 | numpy | 2.5.4 |
 | scipy | 1.18.1 |
 | cryptography | 50.0.2 |
+| matplotlib | 3.11.2 |
+| pytest | 9.2.0 |
+| kyber-py | 1.2.0 |
+| dilithium-py | 1.5.1 |
 
 ### 8.3 `requirements.txt`
 
@@ -535,8 +539,13 @@ qiskit-ibm-runtime==0.51.0
 python-dotenv==1.2.4
 numpy==2.5.4
 scipy==1.18.1
-# a adicionar e fixar a versão depois de instalar:
-# pandas, matplotlib, streamlit, pytest, kyber-py, dilithium-py
+cryptography==50.0.2
+matplotlib==3.11.2
+pytest==9.2.0
+kyber-py==1.2.0
+dilithium-py==1.5.1
+# a adicionar e fixar depois de instalar: pandas, streamlit
+
 ```
 
 Instalação: `py -3.12 -m pip install -r requirements.txt`. Sempre que instalar algo novo, fixe a versão aqui.

@@ -7,4 +7,6 @@ scipy==1.18.1
 cryptography==50.0.2
 matplotlib==3.11.2
 pytest==9.2.0
-# a adicionar e fixar depois de instalar: pandas, streamlit, kyber-py, dilithium-py
+kyber-py==1.2.0
+dilithium-py==1.5.1
+# a adicionar e fixar depois de instalar: pandas, streamlit

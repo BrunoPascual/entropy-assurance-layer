@@ -41,3 +41,13 @@ H_DECLARED_DEFAULT = 1.0     # H declarada usada por RCT e APT
 MIN_LOCAL_OUTPUT_BITS = 8 * SEED_BYTES
 DEFAULT_N_BITS = 1_000_000
 SEED_READ_BITS = 2 * EXTRACTOR_INPUT_BITS
+
+# --- Derivação de chaves PQC (Dia 5, PROJECT.md seção 6.10) ---
+# Prefixos de separação de domínio: o mesmo seed gera material
+# independente para cada algoritmo.
+KEM_DOMAIN: bytes = b"EAL-v1|ML-KEM-768|"
+DSA_DOMAIN: bytes = b"EAL-v1|ML-DSA-65|"
+
+# Tamanhos do material interno exigido pelos padrões.
+KEM_SEED_BYTES: int = 64  # d || z, FIPS 203
+DSA_SEED_BYTES: int = 32  # xi, FIPS 204
