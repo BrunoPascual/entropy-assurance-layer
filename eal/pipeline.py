@@ -32,14 +32,17 @@ from typing import Any
 
 import numpy as np
 
-from eal.config import EXTRACTOR_EPSILON_LOG2, EXTRACTOR_INPUT_BITS, H_DECLARED_DEFAULT
+from eal.config import (
+    DEFAULT_N_BITS,
+    EXTRACTOR_EPSILON_LOG2,
+    EXTRACTOR_INPUT_BITS,
+    H_DECLARED_DEFAULT,
+    SEED_READ_BITS,
+)
 from eal.extract.blocks import ExtractionResult, hash_bits, validate_bits
 from eal.extract.toeplitz import extract_toeplitz
 from eal.health.min_entropy import extractor_entropy
 from eal.mix.mixer import MODES, MixInput, MixPolicyError, MixResult, make_mix_input, mix
-
-DEFAULT_N_BITS = 1_000_000
-SEED_READ_BITS = 2 * EXTRACTOR_INPUT_BITS  # n + m - 1 < 2n para qualquer m <= n
 
 STATUSES = (
     "mixed",              # entrou na mistura

@@ -36,3 +36,8 @@ STATS_MIN_BITS = 1_000_000  # abaixo disso: inconclusivo, nao aprovado
 # --- Dia 3: replay e relatorio de lote ---
 REPLAY_BLOCK_BITS = 4096       # blocos comparados na deteccao de replay
 H_DECLARED_DEFAULT = 1.0     # H declarada usada por RCT e APT
+
+# --- Dia 4: pipeline e mixer ---
+MIN_LOCAL_OUTPUT_BITS = 8 * SEED_BYTES
+DEFAULT_N_BITS = 1_000_000
+SEED_READ_BITS = 2 * EXTRACTOR_INPUT_BITS

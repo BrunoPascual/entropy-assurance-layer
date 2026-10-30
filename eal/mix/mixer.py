@@ -36,6 +36,7 @@ import numpy as np
 
 from eal.config import (
     MIN_LOCAL_NON_SIMULATED_SOURCES,
+    MIN_LOCAL_OUTPUT_BITS,
     MIN_LOCAL_SOURCES_EXPERIMENT,
     MIX_DOMAIN,
     SEED_BYTES,
@@ -44,7 +45,6 @@ from eal.extract.blocks import ExtractionResult, hash_bits, validate_bits
 
 MODES: tuple[str, ...] = ("keygen", "experiment")
 MIXER_TYPE = "sha3-512"
-MIN_LOCAL_OUTPUT_BITS = 8 * SEED_BYTES  # piso: a parte local cobre a semente inteira
 _LEN_BYTES = 8  # comprimentos em 8 bytes big-endian, como no batch_hash
 
 

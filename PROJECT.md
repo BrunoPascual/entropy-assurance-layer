@@ -3,7 +3,7 @@
 - **Versão do documento:** 1.0
 - **Data:** 27/10/2026
 - **Autor:** Bruno Pascual
-- **Status:** Dia 3 de 9 (concluído; gate aprovado, ver seção 16.1)
+- **Status:** Dia 4 de 9 (concluído; gate do Dia 4 aprovado, ver seção 16.2)
 - **Documento irmão:** `THREAT_MODEL.md` (modelo de ameaça)
 
 > Este arquivo é a fonte de verdade do projeto. Cole-o no início de cada sessão com a IA.
@@ -317,8 +317,8 @@ Gerado por `scripts/gerar_secao_rendimento.py` a partir dos arquivos listados ab
 **Política (fail-closed):**
 
 1. Só entram fontes com `approved = True`.
-2. É obrigatório **pelo menos 1 fonte local aprovada e não simulada** (na prática, `os`). Motivo: o provedor da QPU conhece os bits que gerou.
-3. Fontes simuladas só entram em modo experimento, nunca em modo de geração de chave real.
+2. Em modo `keygen` é obrigatório **pelo menos 1 fonte local aprovada e não simulada** (na prática, `os`), cujas saídas extraídas somem pelo menos 512 bits (o tamanho da semente). Motivo: o provedor da QPU conhece os bits que gerou.
+3. Fontes simuladas só entram em modo `experiment`, nunca em `keygen`: em `keygen`, uma fonte simulada na lista é erro de configuração, mesmo reprovada. Em `experiment` basta 1 fonte local aprovada (simulada ou não), com o mesmo piso de 512 bits, e a semente sai marcada `usable_for_key = False`.
 4. Se a política não for satisfeita, **nenhuma semente é gerada** e o erro é registrado.
 
 **Combinação:**
@@ -333,6 +333,22 @@ semente = SHA3-512(
 
 - Saída: 64 bytes.
 - Por que hash e não XOR: no XOR, uma fonte adversária que vê as outras pode cancelar a entropia. A combinação por hash resiste melhor (testado no E4).
+
+<!-- dia4-mixer:start -->
+### 6.9.1 Mixer: o que o código fixa (Dia 4)
+
+Texto escrito a partir de `eal/mix/mixer.py`; complementa o 6.9, que não dizia como codificar os tamanhos.
+
+**Modos.** `keygen`: fonte simulada na lista é erro (mesmo reprovada); exige pelo menos 1 fonte local, não simulada e aprovada, e a parte local deve somar 512 bits extraídos; a semente sai com `usable_for_key = True`. `experiment`: aceita fontes simuladas; exige pelo menos 1 fonte local aprovada (simulada ou não) com o mesmo piso de 512 bits; a semente sai sempre com `usable_for_key = False`.
+
+**Codificação.** `SHA3-512( MIX_DOMAIN || para cada fonte incluída, em ordem de código Unicode do source_id: len(id em UTF-8) [8 bytes, big-endian] || id || n_bits [8 bytes, big-endian] || packbits(saída) )`. O contador é de BITS, não de bytes: `packbits` preenche o último byte com zeros, e sem o contador `[1]` e `[1,0,0,0,0,0,0,0]` dariam a mesma semente.
+
+**Pareamento.** `make_mix_input` amarra o relatório de saúde e a extração aos bits do lote pelo `input_hash` (`hash_bits` dos bits do lote), pelo `batch_id`, pelo `source_id` e pelo tamanho. `source_id`, `batch_id` e `input_hash` repetidos entre as contribuições são recusados.
+
+**Flags.** `is_local` só vale se for booleano verdadeiro; `is_simulated`, só se for booleano falso; `approved`, só se for booleano verdadeiro (`bool` ou `numpy.bool_`). Qualquer outro valor conta como o pior caso.
+
+**Registro.** Fonte reprovada ou sem saída é excluída e registrada com `source_id`, `batch_id` e os motivos, em ordem de `source_id`. `MixResult.to_dict()` traz modo, `usable_for_key`, texto da política, `seed_hash` e, por fonte incluída, `source_id`, `batch_id`, `input_hash`, flags e bits misturados; nenhum byte de semente.
+<!-- dia4-mixer:end -->
 
 ### 6.10 Derivação de chaves (`eal/pqc/keygen.py`)
 
@@ -413,6 +429,29 @@ Determinística a partir da semente, com separação de domínio:
 
 Uma página em Streamlit: fontes e status, saúde por lote, min-entropia por fonte, viés por qubit, último recibo (com botão de verificação) e gráficos dos experimentos. Rodar com `py -3.12 -m streamlit run dashboard/app.py`.
 
+<!-- dia4-pipeline:start -->
+### 6.14 Pipeline (`eal/pipeline.py`, Dia 4)
+
+`run_pipeline(sources, seed_source, mode, n_bits, h_declared, detector, health_fn)` devolve um `PipelineResult`. `health_fn` e `detector` são opcionais: sem eles, o pipeline importa `build_health_report` e `ReplayDetector` (os testes de política injetam versões falsas).
+
+**Fluxo por fonte.** (1) lê um lote; (2) roda o teste de saúde, com o mesmo detector de replay para todas as fontes; (3) se aprovada, extrai com Toeplitz usando uma semente de uma leitura SEPARADA de `seed_source` (uma leitura nova por fonte aprovada); se reprovada, cria uma extração vazia ligada ao lote pelo hash, sem gastar semente; (4) monta o `MixInput`. No fim chama `mix`.
+
+**Princípio.** A falha de uma fonte nunca derruba o pipeline; só a política do mixer derruba a semente. Sem política satisfeita, `mix = None`, o motivo vai em `error` e nenhuma semente é gerada (fail-closed).
+
+**Estados de cada fonte** (`SourceOutcome.status`):
+
+| Estado | Significado |
+| --- | --- |
+| `mixed` | entrou na mistura |
+| `excluded` | reprovada ou sem saída; registrada com o motivo |
+| `not_mixed` | aprovada, mas a política falhou e nenhuma semente saiu |
+| `read_failed` | a leitura levantou exceção |
+| `health_failed` | o teste de saúde levantou exceção |
+| `extraction_failed` | semente de extração indisponível ou recusada, ou H estimada ausente |
+
+**Regras.** Só `Exception` é capturada (`KeyboardInterrupt` passa). A mensagem de uma exceção de fonte ou de teste não é gravada, só o nome da classe, porque pode conter dados do provedor; a única mensagem gravada é a do `ValueError` do próprio extrator. `to_dict()` não traz bit nem byte de semente. O detector de replay vale por execução; para detectar replay entre execuções seguidas, o chamador passa o mesmo `detector`.
+<!-- dia4-pipeline:end -->
+
 ---
 
 ## 7. Estrutura de pastas
@@ -431,9 +470,10 @@ EntropyAssuranceLayer/
 │   ├── cli.py
 │   ├── config.py           # constantes: α, W, n, ε, orçamento
 │   ├── storage.py          # gravação e leitura de lotes em data/raw/
+│   ├── pipeline.py         # fontes -> saúde -> extração -> mixer -> semente (Dia 4)
 │   ├── sources/            # base.py, os_source.py, qpu_sim.py, qpu_ibm.py, faulty.py
 │   ├── health/             # continuous.py, min_entropy.py, stats_tests.py, report.py
-│   ├── extract/            # toeplitz.py, sha3.py
+│   ├── extract/            # blocks.py, budget.py, toeplitz.py, sha3.py
 │   ├── mix/                # mixer.py
 │   ├── pqc/                # keygen.py
 │   └── receipt/            # schema.py, sign.py, verify.py, chain.py
@@ -704,6 +744,54 @@ Limitações desta medição:
 - Com 1 milhão de bits, o monobit detecta desvios da ordem de 0,1 ponto percentual. Viés menor que isso não aparece no gate.
 <!-- dia3-gate:end -->
 
+<!-- dia4-gate:start -->
+### 16.2 Resultado do gate do Dia 4 (resiliência do pipeline)
+
+Medido em 2026-10-30T13:52:03.537145+00:00 (commit `d98e8bb`). Tabela: `data/results/dia4_resilience_2026-10-30_135203.csv`, SHA3-256 `e8b23bb9f44ab1995063420eb7cf6b57dfa8499a6e74b1f7ec8e70ea4c0c5dc6`. Parâmetros: 5 repetições por cenário, lotes de 1.000.000 bits, backend de ruído `FakeKingston`; 60 execuções. Gerado por `scripts/gerar_docs_dia4.py`; resumo, gate e contagem de falsos alarmes foram recalculados do CSV.
+
+**Regras do gate.**
+- Nenhuma execução com VIOLATION em nenhum cenário.
+- No cenário BASE, em toda execução com a `os` aprovada: semente de 64 bytes gerada e `usable_for_key = False` (modo `experiment`), e pelo menos uma execução assim.
+
+**Resultado do gate: CUMPRIDO.**
+
+**Vereditos por cenário.** `DETECTION_MISS` é uma fonte defeituosa que passou nos testes (medida do E2, não falha do pipeline); `UNEXPECTED`, uma fonte que deveria entrar e não entrou; `VIOLATION`, política ou isolamento quebrados.
+
+| Cenário | Modo | Execuções | ok | ok_experiment_only | ok_fail_closed | DETECTION_MISS | UNEXPECTED | VIOLATION |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `BASE` | experiment | 5 | 4 | 1 | - | - | - | - |
+| `BASE_NOISE` | experiment | 5 | 5 | - | - | - | - | - |
+| `C1_stuck` | experiment | 5 | 5 | - | - | - | - | - |
+| `C2_biased_correlated` | experiment | 5 | 4 | - | 1 | - | - | - |
+| `C3_replay/first` | experiment | 5 | 5 | - | - | - | - | - |
+| `C3_replay/second` | experiment | 5 | 5 | - | - | - | - | - |
+| `C5c_os_down_experiment` | experiment | 5 | - | 5 | - | - | - | - |
+| `C6_prng` | experiment | 5 | 5 | - | - | - | - | - |
+| `K1_keygen_standin` | keygen | 5 | 4 | - | - | - | 1 | - |
+| `C4_remote_down` | keygen | 5 | 5 | - | - | - | - | - |
+| `C5a_os_down` | keygen | 5 | - | - | 5 | - | - | - |
+| `C5b_os_tampered` | keygen | 5 | - | - | 5 | - | - | - |
+
+**Execuções fora do esperado** (tudo que não é `ok`, exceto o fail-closed previsto dos cenários C5):
+
+| Cenário | Rep. | Estados | Veredito | Motivo registrado |
+| --- | --- | --- | --- | --- |
+| `BASE` | 2 | `os:excluded;qpu_sim:mixed` | ok_experiment_only | os: reprovada pelo teste de saúde: block: p = 0.00924 (< 0.01) / sem saída de extração (lote curto ou entropia... |
+| `C2_biased_correlated` | 2 | `os:excluded;faulty_biased:excluded;faulty_correlated:excluded` | ok_fail_closed | os: runs: p = 0.00129 (< 0.01) ; faulty_biased: APT: 20 de 976 janelas no limite 589 ou acima (máximo 611) / m... |
+| `K1_keygen_standin` | 2 | `os:mixed;ibm_standin:excluded` | UNEXPECTED: não entrou na mistura: ibm_standin | ibm_standin: reprovada pelo teste de saúde: block: p = 0.00881 (< 0.01) / sem saída de extração (lote curto ou... |
+
+**Leitura dos resultados** (frases geradas do CSV):
+- A `os` não entrou na mistura em 2 de 45 execuções fora dos cenários em que ela falha de propósito (reprovação pelos testes de saúde ou falha de leitura). Referência da seção 16.1: cerca de 3% por lote. Esta contagem não inclui reprovações do stand-in remoto (ver a tabela de atenção).
+- Em 19 execuções com fontes defeituosas ou indisponíveis e a `os` aprovada (`C1_stuck`, `C2_biased_correlated`, `C3_replay/second`, `C4_remote_down`), nenhuma fonte defeituosa entrou na mistura.
+- A `faulty_prng` entrou na mistura em 5 de 5 execuções com a `os` aprovada (C6): testes de saída não distinguem um gerador clássico bom (limitação T4).
+- Em `keygen`, com a `os` fora (leitura falha ou lote adulterado) e a remota no ar, a semente foi gerada em 0 de 10 execuções (esperado: 0; G2).
+- K1: semente utilizável em 5 de 5 execuções; 1 com UNEXPECTED (ver a tabela de atenção).
+- C5c: em `experiment`, com a `os` fora, a `qpu_sim` sozinha gerou semente marcada como inutilizável em 5 de 5 execuções.
+- Execuções com VIOLATION (política ou isolamento do pipeline quebrados): 0.
+
+**O que este gate não mostra.** A fonte "remota" dos cenários `keygen` é um stand-in (bits da `os` com rótulo de fonte remota não simulada), não a QPU da IBM. O gate verifica política, isolamento e fail-closed; não mede a qualidade estatística da semente (o SHA3-512 de lixo também parece uniforme) nem a taxa de detecção de fontes defeituosas, com 5 repetições por cenário (isso é o E2). O CSV guarda só o SHA3-256 da semente; nenhuma semente nem bit é gravado.
+<!-- dia4-gate:end -->
+
 ## 17. Limitações conhecidas
 
 1. Protótipo de pesquisa; não usar para proteger dados reais.
@@ -747,6 +835,20 @@ Limitações desta medição:
 - A fonte `os` não é reprodutível e os bits dessa medição não foram guardados; só estimativas e hashes de lote.
 - Com poucas leituras por fonte, diferenças de H entre `os`, `qpu_sim` ideal e `qpu_sim` com ruído não são conclusivas; a comparação entre fontes é do E1.
 <!-- dia4-limitacoes:end -->
+
+<!-- dia4-limitacoes-pipeline:start -->
+### Limitações do Dia 4 (etapas 2 e 4: mixer, pipeline e resiliência)
+
+- Um `MixInput` montado à mão, sem `make_mix_input`, pode declarar um `input_hash` falso: o pareamento só vale para quem usa o ponto de entrada normal.
+- A semente fica em `bytes`, que o Python não consegue apagar da memória; é aceitável no protótipo e coberto pela premissa P1 (host íntegro).
+- O piso de 512 bits conta bits extraídos, não entropia provada; vale sob as mesmas premissas do extrator (P4 e independência entre blocos).
+- Em `experiment`, o mixer não exige fonte local não simulada (ver o 6.9); a semente sai inutilizável para chave, mas uma execução sem a `os` ainda gera semente.
+- Os testes de política do pipeline usam funções de saúde falsas; o comportamento com os testes estatísticos reais só aparece na execução do script de resiliência.
+- A fonte remota dos cenários `keygen` é um stand-in (bits da `os` com rótulo remoto), não a QPU: o gate não diz nada sobre a QPU real nem sobre a independência do provedor (N7).
+- O cenário C5b adultera o lote da `os` com um trecho de zeros, que só exercita o RCT; não cobre viés nem correlação na `os`.
+- O teste com fonte adaptativa mostra que o SHA3-512 resiste a cancelar a entropia da `os` (cancelar exigiria colisões), mas não protege quem vê a saída da `os` (G3 vale só para quem não a conhece), e uma fonte adaptativa pode "moer" candidatos, a um custo de 2^k para fixar k bits da semente.
+- Poucas repetições por cenário: as contagens do 16.2 não estimam taxas (nem a de falso alarme da `os`, nem a de detecção); isso é o E2.
+<!-- dia4-limitacoes-pipeline:end -->
 
 ## 18. Glossário
 
