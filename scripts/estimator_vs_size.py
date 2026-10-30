@@ -69,11 +69,13 @@ def measure_batch(batch: Any, reading: int) -> dict[str, Any]:
     h_bit, h_byte, h_est = float(est.bit.h), float(est.byte.h), float(est.h_estimated)
     if abs(h_est - min(h_bit, h_byte)) > CONSISTENCY_TOLERANCE:
         raise ValueError("estimador inconsistente: h_estimated difere de min(h_bit, h_byte)")
+    if est.limited_by != limited_by(h_bit, h_byte):
+        raise ValueError("limited_by do estimador difere do recalculado")
     h_used = extractor_entropy(H_DECLARED_DEFAULT, h_est)
     b = loss_breakdown(int(bits.size), h_used)  # m vem de block_output_bits, a mesma função do extrator
     return {
         "size_bits": int(bits.size), "reading": reading, "h_bit": h_bit, "h_byte": h_byte,
-        "h_estimated": h_est, "limited_by": limited_by(h_bit, h_byte), "h_used": h_used,
+        "h_estimated": h_est, "limited_by": est.limited_by, "h_used": h_used,
         "h_health_ok": bool(entropy_health_ok(h_est)), "stats_conclusive": bits.size >= STATS_MIN_BITS,
         "m": b.m, "n_blocks": b.n_blocks, "output_bits": b.output_bits, "total_yield": b.total_yield,
         "batch_hash": batch.batch_hash,
