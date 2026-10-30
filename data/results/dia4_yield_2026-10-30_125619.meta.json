@@ -1,0 +1,47 @@
+{
+  "script": "scripts/yield_analysis.py",
+  "created_at": "2026-10-30T12:56:19.722351+00:00",
+  "git_commit": "8c53bf372392c6bf5bca3753826d8cbc4cd67e3a",
+  "git_dirty": false,
+  "python": "3.12.10",
+  "source_csv": "data/results/dia4_extract_2026-10-30_120623.csv",
+  "source_csv_sha3_256": "bb6fde627dcd1f38e2a802931396a074436d77d670191893fddb91ce005ca6b8",
+  "params": {
+    "n": 2048,
+    "epsilon_log2": -64,
+    "curve_h_steps": 1000,
+    "curve_n_values": [
+      512,
+      1024,
+      2048,
+      4096,
+      8192
+    ],
+    "curve_n_h_values": [
+      0.9,
+      0.954,
+      1.0
+    ],
+    "curve_n_input_bits": 1000000
+  },
+  "outputs": {
+    "analysis": {
+      "path": "data/results/dia4_yield_2026-10-30_125619.csv",
+      "sha3_256": "4dddce9eb49d03d847e784e73329cc3181650af9aee409d7df3a86f198bc72d6"
+    },
+    "curve_h": {
+      "path": "data/results/dia4_yield_curve_h_2026-10-30_125619.csv",
+      "sha3_256": "038b0783c49c025b17547c53d2467af5290cc4fcb0e6d0ad08226d5c962af7a9"
+    },
+    "curve_n": {
+      "path": "data/results/dia4_yield_curve_n_2026-10-30_125619.csv",
+      "sha3_256": "e8e51d143247e5fe8c2c52058e9d2ba6b6cb2ef1ab5b3604188834aba90986ea"
+    }
+  },
+  "notes": [
+    "analysis: cada linha foi recalculada pelo modelo e confere com o CSV de origem",
+    "curve_h e curve_n são contas do modelo, não medidas",
+    "curve_n supõe a mesma H para todo n; a H estimada real não depende de n, mas pode variar entre lotes",
+    "a H usada continua sendo uma estimativa conservadora (T8): o modelo não valida a estimativa"
+  ]
+}
