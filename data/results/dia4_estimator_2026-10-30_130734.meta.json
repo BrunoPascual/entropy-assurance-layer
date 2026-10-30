@@ -1,0 +1,38 @@
+{
+  "script": "scripts/estimator_vs_size.py",
+  "created_at": "2026-10-30T13:07:34.432407+00:00",
+  "git_commit": "dd77008faf9a411173cde1ae319ddd174e6f366b",
+  "git_dirty": false,
+  "python": "3.12.10",
+  "source_id": "os",
+  "params": {
+    "sizes": [
+      65536,
+      262144,
+      1048576,
+      1000000,
+      4194304
+    ],
+    "reads": 10,
+    "h_declared": 1.0,
+    "h_min_health": 0.9,
+    "mcv_z": 2.576
+  },
+  "outputs": {
+    "readings": {
+      "path": "data/results/dia4_estimator_2026-10-30_130734.csv",
+      "sha3_256": "e0e8334b3d05cd8ce3c7a4fc8f05887a5b758d2dea5224874584246a8b32cefd"
+    },
+    "summary": {
+      "path": "data/results/dia4_estimator_summary_2026-10-30_130734.csv",
+      "sha3_256": "db3a61d479caa5dfd0c489479569a3b91b3b2ce84c2537e9962bc21d027f5847"
+    }
+  },
+  "notes": [
+    "mede o estimador de min-entropia sobre a fonte os, não a entropia real da fonte (premissa P3)",
+    "lotes menores que 1M bits não passariam no gate (estatísticos inconclusivos)",
+    "h_bit_reference é a H do estimador por bit para p̂ = 0,5; a diferença para h_est vem do ramo por byte",
+    "a fonte os não é reprodutível e os bits não foram gravados; só estimativas e hashes de lote",
+    "o limiar de H 0,9 foi fixado antes dos dados e não foi ajustado"
+  ]
+}
