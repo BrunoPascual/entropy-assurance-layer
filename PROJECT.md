@@ -664,6 +664,14 @@ Limitações desta medição:
 - O APT e os estatísticos testam só janelas e blocos completos; bits finais são descartados e registrados em `notes`.
 - Lote menor que 1.000.000 bits: estatísticos inconclusivos, e o lote não é aprovado.
 
+### Limitações do Dia 4 (etapa 1: extrator)
+
+- O ε = 2^-64 do Toeplitz vale por bloco. Sobre um lote, o limite é n_blocos · ε (≈ 2^-55 para 488 blocos) e só vale se cada bloco tiver a min-entropia estimada condicionada aos blocos anteriores; correlação entre blocos quebra essa premissa.
+- A garantia do Toeplitz (lema do hash residual) depende da premissa P4: semente uniforme e independente da fonte. O código recusa semente simulada, não local ou idêntica ao lote, mas não prova independência estatística.
+- O extrator SHA3 tem garantia só heurística (modelo de oráculo aleatório); serve para comparação, não para o pipeline.
+- Estatística boa na saída do extrator não prova nada: o SHA3 de bits travados também parece uniforme. O extrator é dimensionado pela H medida na entrada.
+- Os p-valores de saída no CSV de comparação são diagnóstico, não aprovação (saída < 1M bits).
+
 ## 18. Glossário
 
 | Termo | Significado |
