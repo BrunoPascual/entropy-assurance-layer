@@ -1,0 +1,26 @@
+{
+  "fonte": "https://github.com/usnistgov/ACVP-Server (gen-val/json-files)",
+  "branch": "master",
+  "commit": "não registrado (a API do GitHub estava com limite de requisições)",
+  "baixado_em": "2026-10-30T18:27:24.422057+00:00",
+  "arquivos": {
+    "ml_kem_768_keygen.json": {
+      "url": "https://raw.githubusercontent.com/usnistgov/ACVP-Server/master/gen-val/json-files/ML-KEM-keyGen-FIPS203/internalProjection.json",
+      "parameterSet": "ML-KEM-768",
+      "vsId": 42,
+      "testes": 25,
+      "original_bytes": 558841,
+      "original_sha3_256_bytes": "77d18ef0bb338d608a15c7e6598974ab9f14fd303a3d96b3c1c429ba848d39ba",
+      "subconjunto_sha3_256_canonico": "8f656a8297358b31a2ecd7a900955d84f2eb265541b1384e6a08d620a4a77431"
+    },
+    "ml_dsa_65_keygen.json": {
+      "url": "https://raw.githubusercontent.com/usnistgov/ACVP-Server/master/gen-val/json-files/ML-DSA-keyGen-FIPS204/internalProjection.json",
+      "parameterSet": "ML-DSA-65",
+      "vsId": 42,
+      "testes": 25,
+      "original_bytes": 882437,
+      "original_sha3_256_bytes": "f3b2f06a7bf677a9647436743b6cb5151c8ebaa876df09974b81ab293918e19e",
+      "subconjunto_sha3_256_canonico": "979d8586651fd425c5f4680830b43638f2f78bca595f035d892377ce71cdad64"
+    }
+  }
+}

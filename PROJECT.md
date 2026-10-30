@@ -358,8 +358,7 @@ Determinística a partir da semente, com separação de domínio:
 | --- | --- | --- |
 | ML-KEM-768 (FIPS 203) | `d` e `z`, 32 bytes cada | `d‖z = SHAKE256("EAL-v1|ML-KEM-768|" ‖ semente, 64 bytes)` |
 | ML-DSA-65 (FIPS 204) | `ξ`, 32 bytes | `ξ = SHAKE256("EAL-v1|ML-DSA-65|" ‖ semente, 32 bytes)` |
-
-- Biblioteca preferida para o protótipo: `kyber-py` e `dilithium-py` (Python puro, instalação fácil). **Confirmar** se expõem derivação a partir de semente (`key_derive` ou equivalente) antes de escrever o código.
+- Biblioteca usada: `kyber-py` 1.2.0 e `dilithium-py` 1.5.1 (Python puro). Confirmado na etapa 1 do Dia 5: ambas expõem `key_derive` a partir de semente, e o projeto não usa `keygen()`. Os dois `key_derive` reproduzem os vetores de keyGen do NIST ACVP (25 de 25 por algoritmo); ver `tests/data/kat/SOURCE.json`.
 - Alternativa: `liboqs-python` (mais difícil de instalar no Windows).
 - Teste obrigatório: encapsular e decapsular (ML-KEM), assinar e verificar (ML-DSA), e a mesma semente gerar sempre as mesmas chaves.
 - Chaves privadas derivadas **não são gravadas em disco**, exceto com a opção explícita `--export-demo`, apenas para demonstração.
@@ -834,6 +833,16 @@ Medido em 2026-10-30T13:52:03.537145+00:00 (commit `d98e8bb`). Tabela: `data/res
 - O extrator SHA3 tem garantia só heurística (modelo de oráculo aleatório); serve para comparação, não para o pipeline.
 - Estatística boa na saída do extrator não prova nada: o SHA3 de bits travados também parece uniforme. O extrator é dimensionado pela H medida na entrada.
 - Os p-valores de saída no CSV de comparação são diagnóstico, não aprovação (saída < 1M bits).
+
+### Limitações do Dia 5 (etapa 1: derivação PQC)
+
+- Os vetores oficiais (NIST ACVP) cobrem o `key_derive` das bibliotecas, não a derivação da EAL (SHAKE256 com prefixo de domínio sobre a semente), que não tem vetor oficial e é verificada contra `hashlib` no teste.
+- Os vetores são o subconjunto de ML-KEM-768 e ML-DSA-65 do branch master do ACVP-Server, baixado em 30/10/2026; o commit exato não foi registrado.
+- Os vetores cobrem geração de chave. Encapsulamento, decapsulamento, assinatura e verificação são testados por ida e volta e adulteração, sem vetores oficiais.
+- O teste de sigilo procura trechos secretos definidos pelo formato FIPS 203/204. O início da chave privada do ML-DSA (`ρ`) é público, então o teste procura `K`; se uma versão futura da biblioteca mudar o formato, o teste `test_sk_do_ml_dsa_comeca_com_rho_publico` avisa.
+- Bibliotecas em Python puro: sem tempo constante e sem auditoria (T15, N5). A semente fica em `bytes`, que o Python não apaga da memória (P1).
+- Mutações: 14 mutações manuais da derivação, da política do mix e do sigilo foram todas detectadas (`scripts/mutacoes_pqc.py`); isso mostra que os testes pegam esses erros, não que o módulo esteja correto.
+
 
 <!-- dia4-limitacoes:start -->
 ### Limitações do Dia 4 (etapa 3: rendimento do extrator)
