@@ -1,0 +1,83 @@
+{
+  "format": "eal-dia3-health-table-v1",
+  "created_at": "2026-10-30T11:22:09.143096Z",
+  "csv_file": "dia3_health_2026-10-30_112209.csv",
+  "csv_sha3_256": "3b322c4d73d2da52bd4c8ae317f4ca363aea2d7aa5bad20e4893ad0bcd0867af",
+  "git_commit": "ac7637b",
+  "git_dirty": true,
+  "python": "3.12.10",
+  "numpy": "2.5.4",
+  "scipy": "1.18.1",
+  "config": {
+    "RCT_ALPHA_NEG_LOG2": 40,
+    "APT_ALPHA_NEG_LOG2": 20,
+    "APT_WINDOW_BITS": 1024,
+    "MCV_Z": 2.576,
+    "MCV_SYMBOL_BITS": 8,
+    "H_MIN_HEALTH": 0.9,
+    "STATS_P_MIN": 0.01,
+    "STATS_BLOCK_M": 128,
+    "STATS_MIN_BITS": 1000000,
+    "REPLAY_BLOCK_BITS": 4096,
+    "H_DECLARED_DEFAULT": 1.0
+  },
+  "protocol": {
+    "reads": 2,
+    "n_bits": 1000000,
+    "n_prefix_replay": 409600,
+    "session": "dia3",
+    "replay_detector": "um por execução",
+    "order": [
+      "os",
+      "qpu_sim [ideal (controle)]",
+      "qpu_sim [ruído FakeKingston (controle)]",
+      "faulty_biased",
+      "faulty_correlated",
+      "faulty_prng",
+      "faulty_replay",
+      "faulty_stuck"
+    ]
+  },
+  "gate": {
+    "approved": true,
+    "checks": [
+      {
+        "rule": "os aprovada",
+        "ok": true,
+        "detail": "todas as leituras aprovadas"
+      },
+      {
+        "rule": "faulty_biased reprovada",
+        "ok": true,
+        "detail": "todas reprovadas, com APT e limiar de H falhando"
+      },
+      {
+        "rule": "faulty_stuck reprovada",
+        "ok": true,
+        "detail": "todas reprovadas, com RCT falhando"
+      },
+      {
+        "rule": "faulty_correlated reprovada",
+        "ok": true,
+        "detail": "todas reprovadas, com limiar de H falhando"
+      },
+      {
+        "rule": "faulty_replay pega por replay",
+        "ok": true,
+        "detail": "1ª leitura aprovada; seguintes reprovadas por replay (só por replay se tiverem N bits)"
+      },
+      {
+        "rule": "faulty_prng passa (limitação T4)",
+        "ok": true,
+        "detail": "todas aprovadas: testes de saída não detectam gerador clássico"
+      }
+    ]
+  },
+  "limitations": [
+    "prototype",
+    "no_sp800_90b_claim",
+    "faulty_prng_passes_T4",
+    "os_false_alarm_about_3pct_per_batch",
+    "qpu_real_not_collected"
+  ]
+}

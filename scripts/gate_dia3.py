@@ -321,7 +321,7 @@ def main() -> int:
         "csv_file": csv_path.name,
         "csv_sha3_256": hashlib.sha3_256(csv_path.read_bytes()).hexdigest(),
         "git_commit": _git("rev-parse", "--short", "HEAD"),
-        "git_dirty": _git("status", "--porcelain") not in ("", "desconhecido"),
+        "git_dirty": _git("status", "--porcelain", "--untracked-files=no") not in ("", "desconhecido"),
         "python": platform.python_version(),
         "numpy": np.__version__,
         "scipy": scipy.__version__,

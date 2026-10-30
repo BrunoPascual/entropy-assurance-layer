@@ -3,7 +3,7 @@
 - **Versão do documento:** 1.0
 - **Data:** 27/10/2026
 - **Autor:** Bruno Pascual
-- **Status:** Dia 2 de 9 (concluído)
+- **Status:** Dia 3 de 9 (concluído; gate aprovado, ver seção 16.1)
 - **Documento irmão:** `THREAT_MODEL.md` (modelo de ameaça)
 
 > Este arquivo é a fonte de verdade do projeto. Cole-o no início de cada sessão com a IA.
@@ -600,29 +600,43 @@ Uma tarefa está pronta quando:
 <!-- dia3-gate:start -->
 ### 16.1 Resultado do gate do Dia 3
 
-Medido em 2026-10-29T20:05:13.471906Z (medido com mudanças sem commit: o `git_commit` do metadado não descreve o código exato). Tabela: `data/results/dia3_health_2026-10-29_200513.csv`, SHA3-256 `aa5ffcae371567b0e15e542300614d0a4ad05d5a06bc14bcddde1bdafc4f8099`.
+Gate oficial: `dia3_health_2026-10-30_112209.csv`, commit `ac7637b`, criado em `2026-10-30T11:22:09.143096Z`, SHA3-256 `3b322c4d73d2da52bd4c8ae317f4ca363aea2d7aa5bad20e4893ad0bcd0867af`. Resultado: **APROVADO**. O meta marca git_dirty=true por arquivos não rastreados; o código rastreado é o do commit indicado.
 
-| Fonte | Leituras | Aprovadas | Situação |
-| --- | --- | --- | --- |
-| `os` | 2 | 2 | ok |
-| `faulty_biased` | 2 | 0 | ok |
-| `faulty_correlated` | 2 | 0 | ok |
-| `faulty_prng` | 2 | 2 | ok |
-| `faulty_replay` | 3 | 1 | ok |
-| `faulty_stuck` | 2 | 0 | ok |
+Rodadas anteriores, não citar como resultado: `dia3_health_2026-10-29_200210` (controles quebrados, commit 11c6d4c), `dia3_health_2026-10-29_200513` e `dia3_health_2026-10-30_112016` (anteriores às correções do commit ac7637b).
+
+| Fonte | Leituras | Aprovadas | Reprovadas | Erro ou pendente |
+|---|---|---|---|---|
+| `os` | 2 | 2 | 0 | 0 |
+| `qpu_sim [ideal (controle)]` | 2 | 2 | 0 | 0 |
+| `qpu_sim [ruído FakeKingston (controle)]` | 2 | 1 | 1 | 0 |
+| `faulty_biased` | 2 | 0 | 2 | 0 |
+| `faulty_correlated` | 2 | 0 | 2 | 0 |
+| `faulty_prng` | 2 | 2 | 0 | 0 |
+| `faulty_replay` | 3 | 1 | 2 | 0 |
+| `faulty_stuck` | 2 | 0 | 2 | 0 |
+| `ibm_<backend> [QPU real]` | 0 | 0 | 0 | 1 |
+
+Controles (o veredito deles não entra no gate, que só exige que tenham rodado):
+- qpu_sim [ideal (controle)], leitura 1: aprovada; monobit p = 0.7840846216576349; motivos: sem motivos
+- qpu_sim [ideal (controle)], leitura 2: aprovada; monobit p = 0.7565609563559614; motivos: sem motivos
+- qpu_sim [ruído FakeKingston (controle)], leitura 1: aprovada; monobit p = 0.056650205654175154; motivos: sem motivos
+- qpu_sim [ruído FakeKingston (controle)], leitura 2: reprovada; monobit p = 0.00044474799901887707; motivos: monobit: p = 0.000445 (< 0.01)
 
 Regras do gate:
+- [ok] os aprovada: todas as leituras aprovadas
+- [ok] faulty_biased reprovada: todas reprovadas, com APT e limiar de H falhando
+- [ok] faulty_stuck reprovada: todas reprovadas, com RCT falhando
+- [ok] faulty_correlated reprovada: todas reprovadas, com limiar de H falhando
+- [ok] faulty_replay pega por replay: 1ª leitura aprovada; seguintes reprovadas por replay (só por replay se tiverem N bits)
+- [ok] faulty_prng passa (limitação T4): todas aprovadas: testes de saída não detectam gerador clássico
 
-- Cumprida: os aprovada. todas as leituras aprovadas.
-- Cumprida: faulty_biased reprovada. todas reprovadas, com APT e limiar de H falhando.
-- Cumprida: faulty_stuck reprovada. todas reprovadas, com RCT falhando.
-- Cumprida: faulty_correlated reprovada. todas reprovadas, com limiar de H falhando.
-- Cumprida: faulty_replay pega por replay. 1ª leitura aprovada; seguintes reprovadas por replay (só por replay se tiverem N bits).
-- Cumprida: faulty_prng passa (limitação T4). todas aprovadas: testes de saída não detectam gerador clássico.
+**Decisão do Dia 3 (A):** o critério de aprovação continua o da seção 6.6 (monobit, bloco e runs com p ≥ 0,01 em lotes de 1 milhão de bits). Essa regra não foi ajustada depois de ver dados da QPU real. Consequência prevista: uma QPU com viés da ordem do ruído simulado (cerca de 0,15 ponto percentual, previsto pela calibração do chip) pode ser reprovada em parte das leituras. O E1 deve reportar a fração de leituras aprovadas, e não só o veredito de cada uma.
 
-**Achado sobre o gerador clássico.** `faulty_prng` (Mersenne Twister com semente fixa, disfarçado de QPU) passou em todos os testes de saúde e estatísticos, como previsto. Isso não é falha do gate: testes de saída não distinguem um gerador pseudoaleatório bem feito de uma fonte real (T4 e N2 do `THREAT_MODEL.md`). A única defesa contra isso é estrutural: a política do mixer exige pelo menos uma fonte local aprovada e não simulada (seção 6.9). Uma fonte com semente conhecida é previsível para quem a conhece, mesmo passando nos testes; por isso a fonte `os` não pode ser substituída por ela.
-
-**Falso alarme.** A fonte `os` pode ser reprovada em cerca de 3% dos lotes, pela soma das taxas dos três testes estatísticos (p ≥ 0,01). O E2 mede essa taxa com centenas de lotes; a tabela do gate, com duas leituras, não a estima.
+Limitações desta medição:
+- O controle com ruído é simulado. A reprovação dele é um achado sobre a calibração do FakeKingston, não sobre uma QPU real.
+- O `faulty_prng` é reproduzível só como fluxo sequencial da instância: o metadado registra a semente, não o deslocamento do fluxo.
+- O `qpu_sim` registra a semente base no metadado; a semente efetiva de cada execução é a base mais o contador de execuções.
+- Com 1 milhão de bits, o monobit detecta desvios da ordem de 0,1 ponto percentual. Viés menor que isso não aparece no gate.
 <!-- dia3-gate:end -->
 
 ## 17. Limitações conhecidas
