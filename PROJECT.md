@@ -247,6 +247,71 @@ Esses testes **não provam** aleatoriedade: um bom gerador pseudoaleatório pass
 - Operação: `saída = (T · x) mod 2`. Com `n = 2048`, a matriz cabe em memória (`scipy.linalg.toeplitz` + NumPy).
 - Alternativa para comparação (opcional, primeiro corte): condicionamento com SHA3-512.
 
+<!-- dia4-rendimento:start -->
+### 6.8.1 Rendimento do extrator (Dia 4, etapa 3)
+
+Gerado por `scripts/gerar_secao_rendimento.py` a partir dos arquivos listados abaixo, com o SHA3-256 conferido contra o meta. Nenhum número foi digitado à mão. As tabelas A, B e C vêm do modelo de perdas (`eal/extract/budget.py`) e valem para qualquer H; a tabela A parte das leituras do CSV de comparação e a D mede o estimador.
+
+**Contabilidade.** Por bloco de n = 2048 bits, com k = floor(n·H) e margem 2·log2(1/ε) = 128: cada bit de entrada vai para o déficit de entropia (n − n·H), o arredondamento (n·H − k), a margem, a saída m = k − margem ou o resto (bits que não completam um bloco). A soma é exatamente a entrada. Se m = 0, o lote inteiro é descartado por entropia insuficiente.
+
+**Origem dos dados.**
+- Comparação de extratores: `data/results/dia4_extract_2026-10-30_120623.csv`, SHA3-256 `bb6fde627dcd1f38e2a802931396a074436d77d670191893fddb91ce005ca6b8`.
+- Análise de rendimento: `data/results/dia4_yield_2026-10-30_131212.csv` (`4dddce9eb49d03d847e784e73329cc3181650af9aee409d7df3a86f198bc72d6`), `data/results/dia4_yield_curve_h_2026-10-30_131212.csv` (`038b0783c49c025b17547c53d2467af5290cc4fcb0e6d0ad08226d5c962af7a9`), `data/results/dia4_yield_curve_n_2026-10-30_131212.csv` (`e8e51d143247e5fe8c2c52058e9d2ba6b6cb2ef1ab5b3604188834aba90986ea`); medida em 2026-10-30T13:12:12.370978+00:00.
+- Estimador × tamanho: `data/results/dia4_estimator_2026-10-30_131219.csv` (`27ca56e46a0d61776899cf843c7aa9cdf5b849cec59970e4f3f22c099bc3ac87`), `data/results/dia4_estimator_summary_2026-10-30_131219.csv` (`bf2b01b7a6a15b2491a40d074f11acd30ccd96a41af553644e1315976d9b283b`); medida em 2026-10-30T13:12:19.117430+00:00; 50 leituras da fonte `os`.
+
+**Tabela A: para onde foi cada bit de entrada (leituras do CSV de comparação, lote de 1.000.000 bits).** As fontes `qpu_sim_*` são simuladas (gerador clássico) e não representam entropia real.
+
+| Fonte | Leitura | H usada | m | Saída | Déficit | Arredondamento | Margem | Resto |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `os` | 1 | 0,961 | 1840 | 89,79% | 3,89% | 0,01% | 6,25% | 0,06% |
+| `os` | 2 | 0,961 | 1840 | 89,79% | 3,86% | 0,04% | 6,25% | 0,06% |
+| `qpu_sim_ideal` | 1 | 0,958 | 1833 | 89,45% | 4,24% | 0,01% | 6,25% | 0,06% |
+| `qpu_sim_ideal` | 2 | 0,957 | 1831 | 89,35% | 4,30% | 0,05% | 6,25% | 0,06% |
+| `qpu_sim_noise` | 1 | 0,955 | 1828 | 89,21% | 4,45% | 0,04% | 6,25% | 0,06% |
+| `qpu_sim_noise` | 2 | 0,953 | 1824 | 89,01% | 4,66% | 0,02% | 6,25% | 0,06% |
+
+**Tabela B: rendimento por bloco em função de H (n = 2048).** Primeiro H da grade (passo 0,001) com saída positiva: 0,063.
+
+| H | k = floor(n·H) | m | m/n | Déficit/bloco | Arredond./bloco | Margem/bloco |
+| --- | --- | --- | --- | --- | --- | --- |
+| 0,500 | 1024 | 896 | 0,4375 | 1024,0 | 0,000 | 128 |
+| 0,900 | 1843 | 1715 | 0,8374 | 204,8 | 0,200 | 128 |
+| 0,954 | 1953 | 1825 | 0,8911 | 94,2 | 0,792 | 128 |
+| 1,000 | 2048 | 1920 | 0,9375 | 0,0 | 0,000 | 128 |
+
+**Tabela C: rendimento em função de n, com H = 0,954 e lote de 1.000.000 bits** (a H é suposta a mesma para todo n; o CSV traz também H = 0,9 e 1,0).
+
+| n | m | Blocos em 1M bits | m/n | Margem/bloco | log2(ε do lote) |
+| --- | --- | --- | --- | --- | --- |
+| 512 | 360 | 1953 | 0,7031 | 25,00% | -53,07 |
+| 1024 | 848 | 976 | 0,8281 | 12,50% | -54,07 |
+| 2048 | 1825 | 488 | 0,8911 | 6,25% | -55,07 |
+| 4096 | 3779 | 244 | 0,9226 | 3,13% | -56,07 |
+| 8192 | 7687 | 122 | 0,9384 | 1,56% | -57,07 |
+
+**Tabela D: H estimada da fonte `os` em função do tamanho do lote.** Mede o estimador, não a fonte. Lotes menores que 1.000.000 bits não passariam no gate (estatísticos inconclusivos).
+
+| Bits | Leituras | H estimada | dp | Mín a máx | H_bit | H_byte | Ref. bit (p̂=0,5) | Limitou (byte) | Passa H ≥ 0,9 | Saída média |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 65.536 | 10 | 0,8652 | 0,0102 | 0,8516 a 0,8835 | 0,9811 | 0,8652 | 0,9856 | 100% | 0% | 52.589 |
+| 262.144 | 10 | 0,9249 | 0,0037 | 0,9193 a 0,9306 | 0,9905 | 0,9249 | 0,9928 | 100% | 100% | 225.997 |
+| 1.000.000 | 10 | 0,9585 | 0,0027 | 0,9534 a 0,9617 | 0,9948 | 0,9585 | 0,9963 | 100% | 100% | 895.187 |
+| 1.048.576 | 10 | 0,9586 | 0,0027 | 0,9520 a 0,9619 | 0,9950 | 0,9586 | 0,9964 | 100% | 100% | 939.366 |
+| 4.194.304 | 10 | 0,9791 | 0,0016 | 0,9767 a 0,9815 | 0,9976 | 0,9791 | 0,9982 | 100% | 100% | 3.843.277 |
+
+**Leitura dos resultados** (frases geradas dos CSVs):
+- A margem de segurança é fixa: 128 bits por bloco de 2048 bits (6,25% da entrada), qualquer que seja H.
+- Nas 6 leituras do CSV de comparação, a H usada ficou entre 0,953 e 0,961 e a saída ficou entre 89,01% e 89,79% da entrada.
+- A H estimada média vai de 0,865 com 65.536 bits a 0,979 com 4.194.304 bits.
+- A média cresce com o tamanho do lote em todos os tamanhos medidos.
+- O teste de saúde pela H (limiar 0,9) reprovou parte ou todas as leituras com: 65.536 bits (0% das leituras passou).
+- Em todos os tamanhos, o ramo por byte limitou a H em 100% das leituras.
+- Com 4.194.304 bits, a referência analítica do ramo por bit (p̂ = 0,5) é 0,9982 e o H_bit médio medido é 0,9976; a H estimada (0,9791) fica abaixo disso por causa do ramo por byte.
+- A amplitude da H entre as 6 leituras do CSV de comparação (0,953 a 0,961, diferença 0,0080) deve ser lida contra o desvio entre leituras da `os` com 1.000.000 bits (0,0027, 10 leituras). A amplitude é de no máximo 4 desvios: essa comparação, com poucas leituras por fonte, não distingue uma fonte da outra.
+
+**Interpretação (não medida).** O estimador usa um limite superior de 99% e, no ramo por byte, o máximo entre 256 contagens de símbolos; por construção ele fica abaixo de 1 mesmo para uma fonte uniforme. Esta medição não separa entropia real de conservadorismo do estimador. Pela premissa P3 a `os` tem H próxima de 1, mas isso é premissa, não resultado. O rendimento do extrator herda esse conservadorismo.
+<!-- dia4-rendimento:end -->
+
 ### 6.9 Mixer (`eal/mix/mixer.py`)
 
 **Política (fail-closed):**
@@ -671,6 +736,17 @@ Limitações desta medição:
 - O extrator SHA3 tem garantia só heurística (modelo de oráculo aleatório); serve para comparação, não para o pipeline.
 - Estatística boa na saída do extrator não prova nada: o SHA3 de bits travados também parece uniforme. O extrator é dimensionado pela H medida na entrada.
 - Os p-valores de saída no CSV de comparação são diagnóstico, não aprovação (saída < 1M bits).
+
+<!-- dia4-limitacoes:start -->
+### Limitações do Dia 4 (etapa 3: rendimento do extrator)
+
+- O modelo de perdas é conta, não medida: ele diz o que o extrator faz com a H que recebe, e não se essa H está certa (T8).
+- A curva em função de n supõe a mesma H para todo n; o ε do lote (n_blocos · ε) vale sob a premissa de independência entre blocos.
+- A H estimada da `os` fica abaixo de 1 por construção do estimador, e o teste de saúde pela H (limiar 0,9) reprova lotes pequenos mesmo vindos de uma fonte que a premissa P3 considera boa; ver a tabela D para os tamanhos afetados.
+- A tabela D tem 10 leituras por tamanho: o desvio entre leituras é reportado, mas não há intervalo de confiança.
+- A fonte `os` não é reprodutível e os bits dessa medição não foram guardados; só estimativas e hashes de lote.
+- Com poucas leituras por fonte, diferenças de H entre `os`, `qpu_sim` ideal e `qpu_sim` com ruído não são conclusivas; a comparação entre fontes é do E1.
+<!-- dia4-limitacoes:end -->
 
 ## 18. Glossário
 
