@@ -414,6 +414,10 @@ Determinística a partir da semente, com separação de domínio:
 3. `prev_receipt_hash` encadeia os recibos; o log fica em `data/receipts/chain.jsonl`.
 4. Verificação (`eal verify`): recalcula o JSON canônico, confere a assinatura com a chave pública do emissor e confere o encadeamento.
 
+**Construtor do recibo (Dia 5, etapa 2B, `eal/receipt/builder.py`).** Monta o corpo do recibo a partir do `PipelineResult`, das `DerivedKeys` e dos objetos `Source`. Cada fonte traz `source_type`, `source_version`, `status`, `batch_id`, `batch_hash` (o `input_hash` do lote), flags, `approved`, motivos, o `HealthReport` e os metadados da extração, incluindo o `seed_hash` da semente Toeplitz daquela fonte. O bloco `extractor` de topo traz só tipo, `n` e `epsilon_log2`. O `receipt_id` é UUID5 do `seed_hash`. As chaves são re-derivadas da semente e conferidas. Fontes que falharam entram com `approved: false` e o motivo, sem mensagem de exceção.
+
+**Chave do emissor.** `xi = SHAKE256("EAL-v1|issuer|ML-DSA-65|" ‖ semente, 32 bytes)`, a partir de uma execução `keygen` validada pelo mixer.
+
 ### 6.12 Linha de comando (`eal/cli.py`)
 
 | Comando | Faz |
@@ -868,6 +872,13 @@ Medido em 2026-10-30T13:52:03.537145+00:00 (commit `d98e8bb`). Tabela: `data/res
 - O teste com fonte adaptativa mostra que o SHA3-512 resiste a cancelar a entropia da `os` (cancelar exigiria colisões), mas não protege quem vê a saída da `os` (G3 vale só para quem não a conhece), e uma fonte adaptativa pode "moer" candidatos, a um custo de 2^k para fixar k bits da semente.
 - Poucas repetições por cenário: as contagens do 16.2 não estimam taxas (nem a de falso alarme da `os`, nem a de detecção); isso é o E2.
 <!-- dia4-limitacoes-pipeline:end -->
+
+### Limitações do Dia 5 (etapa 2: recibo)
+
+- Os `params` do lote (ex.: `job_id` da IBM) não chegam ao recibo, porque o `PipelineResult` não guarda os lotes. Pendente antes da coleta do Dia 6 (G6).
+- O recibo é verificável por este código em Python; o JSON canônico com números de ponto flutuante não foi testado contra um verificador em outra linguagem.
+- O teste de integração usa uma fonte determinística (SHAKE256) no lugar da `os`, para não falhar por acaso; ela não é fonte de entropia e só existe nos testes.
+- A chave do emissor depende só da fonte `os` (P3) e fica em disco sem cifragem (N11).
 
 ## 18. Glossário
 

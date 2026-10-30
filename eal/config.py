@@ -68,3 +68,10 @@ RECEIPT_REQUIRED_LIMITATIONS: tuple[str, ...] = (
 )
 ISSUER_SK_NAME: str = "issuer_ml_dsa_65.sk"
 ISSUER_PK_NAME: str = "issuer_ml_dsa_65.pk"
+
+# --- Construtor do recibo (Dia 5, etapa 2B) ---
+from eal import __version__ as _PACKAGE_VERSION  # fonte única da versão
+EAL_VERSION: str = _PACKAGE_VERSION
+ISSUER_DOMAIN: bytes = b"EAL-v1|issuer|ML-DSA-65|"  # semente da chave do emissor
+RECEIPT_ID_NAMESPACE: str = "06ed644d-898c-5a92-b681-f8e5ce512ab7"  # uuid5(NAMESPACE_URL, "urn:eal:v1:receipt-id")
+RECEIPT_EXTRACTOR_TYPE: str = "toeplitz"
