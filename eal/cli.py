@@ -14,7 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -43,6 +43,12 @@ RUN_LOG_NAME = "eal_runs.jsonl"
 PUBLIC_KEM_NAME = "ml_kem_768.ek.hex"
 PUBLIC_DSA_NAME = "ml_dsa_65.pk.hex"
 _LOGGED_COMMANDS = ("init-issuer", "run")
+# Fontes aceitas em `run --sources`: o nome é a chave e o valor cria as fontes. É a
+# ÚNICA lista: uma fonte nova só passa no argumento se ganhar uma entrada aqui
+# (achado F4 da revisão adversarial do Dia 5; antes, --sources era validado e ignorado).
+_SOURCE_FACTORIES: dict[str, Callable[[], list[Any]]] = {
+    "os": lambda: [OsSource()],
+}
 
 
 class _Fail(Exception):
@@ -104,8 +110,8 @@ def _bits_arg(value: str) -> int:
 
 def _sources_arg(value: str) -> str:
     names = [n.strip() for n in value.split(",") if n.strip()]
-    if names == ["os"]:
-        return "os"
+    if len(names) == 1 and names[0] in _SOURCE_FACTORIES:
+        return names[0]
     if any(n.startswith(("qpu_sim", "faulty")) for n in names):
         raise argparse.ArgumentTypeError(
             "fonte simulada ou defeituosa não gera chaves (modo keygen); use --sources os")
@@ -136,8 +142,11 @@ def _build_parser() -> argparse.ArgumentParser:
     ver.add_argument("file", type=Path, help="arquivo do recibo (<receipt_id>.json)")
     _add_dir(ver, "--keys-dir", KEYS_DIR, "pasta da chave pública do emissor")
     ver.add_argument("--chain-dir", type=Path, default=None, help="pasta do chain.jsonl (padrão: a do arquivo)")
-    ver.add_argument("--sem-cadeia", action="store_true", help="não confere a cadeia (avisa na saída)")
-    ver.add_argument("--expected-head", default=None, help="hash da cabeça da cadeia guardado fora do log")
+    # Juntas, as duas opções são erro de uso (achado F1 da revisão adversarial do Dia 5):
+    # antes, --sem-cadeia fazia a cabeça informada ser ignorada em silêncio.
+    exclusive = ver.add_mutually_exclusive_group()
+    exclusive.add_argument("--sem-cadeia", action="store_true", help="não confere a cadeia (avisa na saída)")
+    exclusive.add_argument("--expected-head", default=None, help="hash da cabeça da cadeia guardado fora do log")
     return parser
 
 
@@ -212,7 +221,8 @@ def _current_head(receipts_dir: Path, issuer_pk: bytes) -> str:
 def _cmd_run(args: argparse.Namespace, sources: Any, seed_source: Any) -> int:
     issuer = _load_issuer(args.keys_dir)
     head = _current_head(args.receipts_dir, issuer.pk)  # antes do pipeline: log ruim não gasta entropia
-    result, srcs = _run_keygen(sources, seed_source, args.bits)
+    chosen = sources if sources is not None else _SOURCE_FACTORIES[args.sources]()
+    result, srcs = _run_keygen(chosen, seed_source, args.bits)
     keys = derive_keys_from_mix(result.mix)
     body = build_receipt_body(result, keys, srcs, prev_receipt_hash=head)
     receipt = sign_receipt(body, issuer)

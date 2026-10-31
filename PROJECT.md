@@ -896,6 +896,25 @@ Gerado por `scripts/registrar_gate_dia5.py` a partir de `data/results/dia5_gate_
 As chaves privadas derivadas ficam só em memória (AT2 do THREAT_MODEL). A exceção `--export-demo` não faz parte deste gate.
 <!-- dia5-nota:end -->
 
+<!-- dia5-revisao:start -->
+### 16.4 Revisão adversarial do Dia 5
+
+Feita por leitura do código, em partes, a partir do arquivo que o coletor gera (`revisao_adversarial_parteN_*.txt`), com o commit lido e o SHA-256 de cada arquivo. O que foi confirmado por execução está dito em cada achado; o resto é leitura e não prova ausência de defeitos.
+
+**Parte 1 (31/10/2026), commit `90d15b8`.** `eal/cli.py` (SHA-256 `0ADAC6167E0A570F56BA1D0C4A220AFB6F2A96F1BEBFFD9F564FBC076040DFA5`); `eal/receipt/chain.py` (SHA-256 `779BE0DA09A47EAC1F39AF65A7F9C89977FE67669D7FA7409DDBC1132D2685FE`); `eal/receipt/verify.py` (SHA-256 `371DD71FFA5B99078EB044008AFE7AB0D997FF070763D3D9C0956DAF5F598733`).
+
+| ID | Gravidade | Onde | Achado | Decisão |
+| --- | --- | --- | --- | --- |
+| F1 | Baixa | `cli.py`, `verify` | `--sem-cadeia` com `--expected-head` ignorava a cabeça em silêncio; só aparecia o aviso de cadeia não conferida. Confirmado por execução. | Corrigido: juntas, as duas opções são erro de uso (código 2), antes de ler o arquivo. Testes em `tests/test_cli_revisao_parte1.py`. |
+| F2 | Baixa (disponibilidade) | `chain.py`, `append_receipt` | Uma linha no log sem o arquivo individual deixa a cadeia inválida, e o `run` recusa antes do pipeline. Confirmado por execução, numa cópia. | Já estava documentado (seção 17, etapa 3). A limitação ganhou o procedimento de reparo manual. |
+| F3 | Baixa | `chain.py` | Sem trava contra duas gravações simultâneas: a cadeia é acusada como quebrada e para; não aceita o recibo errado. | Já estava documentado; sem mudança. |
+| F4 | Baixa (latente) | `cli.py`, `run` | `--sources` era validado e nunca lido. | Corrigido: a lista que valida o argumento é a mesma que cria as fontes (`_SOURCE_FACTORIES`). Testes no mesmo arquivo de F1. |
+| F5 | Informativa | `verify.py`, `verify_receipt_text` | O motivo "JSON inválido" inclui o texto do erro do parser de JSON. | Aceito sem mudança: o texto traz só a posição e mensagens fixas, nunca conteúdo do recibo, e ajuda a diagnosticar. |
+| F6 | Informativa | `cli.py` e `chain.py` | O `run` verifica a cadeia inteira duas vezes (uma verificação ML-DSA por linha). | A medir quando a cadeia crescer. A primeira passada é a que evita gastar entropia com log ruim. |
+
+**Pendente para as partes 2 e 3:** se `save_issuer_key` grava em modo exclusivo (o `init-issuer` confere a existência da chave antes de rodar o pipeline); se `is_hex64` aceita só minúsculas; o que `PipelineResult.to_dict()` leva ao log de falhas; o mínimo aceito em `--bits`; e se `validate_body` recusa campos a mais no corpo assinado.
+<!-- dia5-revisao:end -->
+
 ## 17. Limitações conhecidas
 
 1. Protótipo de pesquisa; não usar para proteger dados reais.
@@ -977,7 +996,7 @@ As chaves privadas derivadas ficam só em memória (AT2 do THREAT_MODEL). A exce
 - Apagar o ÚLTIMO recibo (ou truncar o fim do log) deixa uma cadeia válida. Só a cabeça guardada fora do log (`expected_head`) denuncia, e o protótipo ainda não guarda essa cabeça em lugar nenhum.
 - Quem tem a chave privada do emissor e acesso ao disco pode refazer a cadeia inteira com assinaturas válidas (N11, resíduo de T9).
 - Uma chave de emissor por cadeia, sem rotação: trocar a chave exige começar outra cadeia.
-- A gravação em dois arquivos não é atômica. Se o processo cair entre a linha e o `<receipt_id>.json`, o log fica com uma linha sem arquivo e passa a recusar novas gravações (fail-closed) até uma intervenção manual; não há comando de reparo.
+- A gravação em dois arquivos não é atômica. Se o processo cair entre a linha e o `<receipt_id>.json`, o log fica com uma linha sem arquivo e passa a recusar novas gravações (fail-closed) até uma intervenção manual; não há comando de reparo. O reparo é recriar `<receipt_id>.json` com os mesmos bytes da linha do log seguidos de `\n`, gravado em modo binário (um editor pode trocar `\n` por `\r\n`), e conferir com `eal verify`. Se a queda deixar uma linha incompleta no fim do log, o reparo é outro (remover essa linha) e não foi testado. Ver achado F2 na seção 16.4.
 - O `fsync` pede ao sistema operacional que grave no disco; o comportamento em queda de energia não foi testado.
 - O `created_at` é informado por quem emite o recibo e não é conferido (nem a ordem entre recibos).
 - O teste de integração da cadeia usa a mesma fonte determinística de teste da etapa 2 no lugar da `os`; ela não é fonte de entropia.
