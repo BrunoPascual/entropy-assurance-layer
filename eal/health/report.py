@@ -162,7 +162,7 @@ def assemble_report(
 
     notes: list[str] = []
     if replay.history_batches == 0:
-        notes.append("replay: primeiro lote da execução; não há histórico para comparar")
+        notes.append("replay: primeiro lote do histórico; não há lotes anteriores para comparar")
     if replay.discarded_bits:
         notes.append(f"replay: {replay.discarded_bits} bits finais fora de bloco completo não comparados")
     if apt.discarded_bits and not apt.inconclusive:

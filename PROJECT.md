@@ -921,11 +921,11 @@ Feita por leitura do código, em partes, a partir do arquivo que o coletor gera 
 | F9 | Baixa (endurecimento) | `schema.py`, `report.py`, `builder.py` | O validador não olha dentro de `mixer`, `sources[i]` etc., e `HealthReport.to_dict()` usa `asdict`: um campo novo iria para o recibo assinado sem alarme. Hoje nenhum desses objetos leva material secreto. Confirmado por execução: a aceitação de campo extra; o resto é leitura. | Corrigido no construtor: lista fechada de campos nos objetos aninhados, recusa de texto hexadecimal longo e de lista longa de bits, e testes que travam os 35 campos do `HealthReport`. A verificação não mudou: recibos antigos continuam válidos. |
 | F10 | Informativa | `pipeline.py` | O `except ValueError` gravava o texto de qualquer `ValueError` do `try`, inclusive o da leitura da semente. | Corrigido: a leitura da semente tem `try` próprio, e só a mensagem do extrator (texto fixo e tamanhos) é gravada. |
 | F11 | Baixa (latente) | `toeplitz.py` | A checagem da semente usava veracidade: `is_simulated=None`, `''` ou `0` e `is_local='não'` passavam. Confirmado por execução. | Corrigido: booleano estrito, como no mixer e no construtor do recibo. |
-| F12 | Média para o Dia 6, baixa hoje | `pipeline.py`, `report.py` | O detector de replay é criado a cada `eal run`: replay entre execuções não é detectado. Já estava na seção 17; o THREAT_MODEL (T3) dizia "baixo para replay exato". | Documentado: T3 do THREAT_MODEL v1.2 e N14. A persistência do histórico não foi implementada. |
+| F12 | Média para o Dia 6, baixa hoje | `pipeline.py`, `report.py` | O detector de replay é criado a cada `eal run`: replay entre execuções não é detectado. Já estava na seção 17; o THREAT_MODEL (T3) dizia "baixo para replay exato". | Resolvido no Dia 6 (passos 1 e 2, commits e25e8dd e e4b9f1d): o histórico é salvo em `data/logs/replay_history.json` e carregado antes de qualquer leitura de fonte; T3 e N14 atualizados no THREAT_MODEL v1.3. |
 
 **Resolvido sem mudança de código:** `save_issuer_key` grava em modo exclusivo; os quatro prefixos de domínio da semente (`EAL-v1|ML-KEM-768|`, `EAL-v1|ML-DSA-65|`, `EAL-v1|issuer|ML-DSA-65|` e `EAL-v1-mix`) são distintos e nenhum é prefixo de outro (executado); `PipelineResult.to_dict()` e `MixResult.to_dict()` são listas fixas de campos; um `--bits` abaixo de 1.000.000 não aprova a fonte, porque o teste estatístico fica inconclusivo (leitura).
 
-**Pendência para o Dia 6, vinda da revisão:** persistir o histórico do detector de replay entre execuções antes de usar a fonte da IBM (F12). Hoje cada `eal run` começa com o histórico vazio.
+**F12 resolvido no Dia 6** (passos 1 e 2, commits e25e8dd e e4b9f1d): o histórico do detector de replay é salvo entre execuções e carregado antes de qualquer leitura de fonte; a gravação acontece antes de qualquer recibo. Falha de leitura ou de gravação recusa a execução (fail-closed). Limitações na seção 17.
 **G6 (Dia 6, resolvido):** params do lote no recibo. Passo 1 (`df231d7`): `SourceOutcome` carrega os params, fora do `to_dict()`. Passo 2 (`e0b4dd4`): lista fechada em `config.py`, bloco `batch_params` no builder e no esquema, `job_id` obrigatório em `qpu_ibm`. Verificação: suíte com 1623 passed e 1 skipped; cadeia real válida (posição 2 de 2, cabeça conferida); recibos antigos sem o bloco continuam válidos.
 
 <!-- dia5-revisao:end -->
@@ -1011,6 +1011,14 @@ Feita por leitura do código, em partes, a partir do arquivo que o coletor gera 
 - Os nomes das chaves (`backend`, `job_id`, `shots`, `qubits`) e os formatos (texto de até 64 caracteres, inteiros de 1 a 10⁹) são as premissas deste protótipo. O adaptador da IBM ainda não existe: os nomes e os formatos reais do `job_id` e do número de qubits precisam ser conferidos na documentação do qiskit-ibm-runtime antes da coleta. Se o provedor usar outro formato, o recibo é recusado (fail-closed).
 - O `job_id` é guardado em claro no recibo. Ele não é segredo, mas revela que o job existiu na conta.
 - O recibo prova os params que o código entregou ao builder, não que a API da IBM devolveu esses valores.
+
+### Limitações do Dia 6 (F12: histórico de replay)
+
+- O histórico começa no primeiro `eal run` depois do commit `e4b9f1d`. Lotes de execuções anteriores não estão nele, então o replay de um lote antigo não é detectado.
+- O `state_hash` detecta corrupção acidental, não adulteração: quem tem acesso ao disco pode refazer o arquivo, e apagá-lo zera a proteção sem alarme. A cabeça da cadeia anotada fora do repositório não cobre este arquivo.
+- Não há trava para dois `eal run` simultâneos (como a F3): a última gravação vence.
+- O arquivo cresce com os lotes; acima de 64 MiB o `run` recusa, até que alguém o arquive à mão.
+- Replay transformado e replay deslocado para fora de múltiplos de 4096 bits continuam não detectados (ver as limitações do Dia 3).
 
 ### Limitações do Dia 5 (etapa 3: log encadeado)
 

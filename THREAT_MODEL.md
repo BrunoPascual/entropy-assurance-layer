@@ -1,7 +1,7 @@
 # Entropy Assurance Layer (EAL) — Modelo de ameaça
 
-- **Versão do documento:** 1.2
-- **Data:** 27/10/2026 (v1.0); revisada em 31/10/2026 (v1.1 e v1.2)
+- **Versão do documento:** 1.3
+- **Data:** 27/10/2026 (v1.0); revisada em 31/10/2026 (v1.1, v1.2 e v1.3)
 - **Autor:** Bruno Pascual
 - **Documento irmão:** `PROJECT.md`
 
@@ -80,7 +80,7 @@ Bibliotecas de terceiros (qiskit, numpy, scipy, PQC em Python puro): confiadas, 
 | --- | --- | --- | --- | --- | --- |
 | T1 | Viés ou correlação na fonte | ADV1 | APT, estimador MCV por bit e por byte, extrator dimensionado pela entropia estimada | E1, E2, testes unitários | Baixo para viés grosseiro; médio para correlações sutis |
 | T2 | Bits travados | ADV1 | RCT | E2, testes com sequência conhecida | Baixo |
-| T3 | Replay de lote ou de bloco | ADV3 | Hash de cada lote e de blocos de 4096 bits; reprova repetição dentro de uma execução (o histórico do detector não é guardado entre execuções do `eal run`) | E2 | Baixo para replay exato dentro de uma execução; **não detectado entre execuções**; alto para replay transformado |
+| T3 | Replay de lote ou de bloco | ADV3 | Hash de cada lote e de blocos de 4096 bits; o histórico é guardado em `data/logs/replay_history.json` e carregado antes de qualquer leitura de fonte, então reprova repetição dentro de uma execução e entre execuções (F12, Dia 6) | E2; testes do F12 | Baixo para replay exato; **apagar ou trocar o arquivo de histórico zera a proteção sem alarme**; alto para replay transformado; replay deslocado para fora de bloco de 4096 bits não detectado |
 | T4 | Gerador clássico disfarçado de QPU | ADV3 | Não detectável por testes de saída. Mitigação estrutural: fonte local obrigatória na mistura; CHSH como verificação de sanidade | E2, E5 | **Alto**, declarado como limitação |
 | T5 | Provedor conhece os bits | ADV2 | Política: ≥ 1 fonte local aprovada e não simulada em toda semente | Teste de política no mixer | Baixo, se o host for íntegro |
 | T6 | Fonte adaptativa cancela a mistura | ADV6 | Combinação por SHA3-512 com separação de domínio (não XOR) | E4 | Baixo, sob a premissa P2 |
@@ -131,7 +131,7 @@ Cada garantia vale **somente** sob as premissas da seção 8.
 | N11 | Proteção da chave do emissor em disco | Arquivo local sem HSM nem cifragem |
 | N12 | Resistência a ataques físicos ou de canal lateral | Fora do escopo do protótipo |
 | N13 | Detectar a remoção dos últimos recibos da cadeia sem uma cabeça guardada fora do log | Um log sem o fim continua sendo uma cadeia válida; o protótipo imprime a cabeça no `run`, mas não a guarda |
-| N14 | Detectar replay de lote entre execuções do `eal run` | O detector de replay guarda o histórico só em memória e começa vazio a cada execução; isso importa a partir da fonte da IBM (Dia 6), porque um lote antigo devolvido numa execução seguinte não seria visto |
+| N14 | Detectar replay de lote entre execuções do `eal run` quando o arquivo de histórico é apagado, trocado ou refeito | O histórico (`data/logs/replay_history.json`, F12) é um arquivo local: quem tem acesso ao disco pode apagá-lo ou refazê-lo, e o `state_hash` detecta só corrupção acidental; não há trava para execuções simultâneas; apagá-lo zera a proteção sem alarme |
 
 ---
 
@@ -209,3 +209,12 @@ Se uma premissa cair, as garantias que dependem dela caem junto, e isso deve ser
 
 **O que não mudou.** Adversários, premissas e as demais garantias e não garantias. A persistência do histórico do detector não foi implementada: é pendência antes da fonte da IBM (Dia 6).
 <!-- revisao-v12:end -->
+<!-- revisao-v13:start -->
+### v1.3 (31/10/2026)
+
+**Motivo.** O F12 da revisão adversarial do Dia 5: o detector de replay começava vazio a cada `eal run`, então um lote antigo devolvido numa execução seguinte não era visto. Era pendência antes da fonte da IBM (Dia 6).
+
+**O que mudou.** T3: o histórico é guardado em `data/logs/replay_history.json` e carregado antes de qualquer leitura de fonte; a gravação acontece antes de qualquer recibo; falha de leitura ou de gravação recusa a execução (fail-closed). N14 reescrita: a não garantia agora é o arquivo apagado, trocado ou refeito, e o risco residual está separado. Versão e data no cabeçalho.
+
+**O que não mudou.** Adversários, premissas e as demais garantias e não garantias. Replay transformado e replay deslocado continuam fora do alcance do detector. Lotes de execuções anteriores ao commit `e4b9f1d` não estão no histórico.
+<!-- revisao-v13:end -->
