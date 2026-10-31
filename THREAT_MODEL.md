@@ -1,7 +1,7 @@
 # Entropy Assurance Layer (EAL) — Modelo de ameaça
 
-- **Versão do documento:** 1.0
-- **Data:** 27/10/2026
+- **Versão do documento:** 1.1
+- **Data:** 27/10/2026 (v1.0); revisada em 31/10/2026 (v1.1)
 - **Autor:** Bruno Pascual
 - **Documento irmão:** `PROJECT.md`
 
@@ -30,7 +30,7 @@ O modelo **não** cobre uso em produção, múltiplos usuários, servidores púb
 | AT1 | Semente de 64 bytes | Quem a conhece reconstrói todas as chaves derivadas | Só em memória |
 | AT2 | Chaves privadas derivadas (ML-KEM-768, ML-DSA-65) | Decifram ou assinam em nome do dono | Só em memória (exceto `--export-demo`) |
 | AT3 | Chave privada do emissor de recibos | Permite falsificar recibos | `keys/*.sk`, fora do Git |
-| AT4 | Integridade dos recibos | É a evidência de auditoria do produto | `data/receipts/` |
+| AT4 | Integridade dos recibos | É a evidência de auditoria do produto. A cabeça da cadeia é impressa pelo `run`, mas o protótipo não a guarda em lugar nenhum | `data/receipts/` (recibos e `chain.jsonl`); `data/logs/eal_runs.jsonl` registra as falhas da CLI e não traz semente nem chaves privadas |
 | AT5 | Integridade dos dados crus e resultados | Os experimentos dependem deles | `data/raw/`, `data/results/` |
 | AT6 | Token da IBM | Consome o orçamento e acessa a conta | `.env`, fora do Git |
 | AT7 | Orçamento de QPU | Recurso escasso (cerca de 10 min por 28 dias) | Conta IBM |
@@ -86,7 +86,7 @@ Bibliotecas de terceiros (qiskit, numpy, scipy, PQC em Python puro): confiadas, 
 | T6 | Fonte adaptativa cancela a mistura | ADV6 | Combinação por SHA3-512 com separação de domínio (não XOR) | E4 | Baixo, sob a premissa P2 |
 | T7 | Deriva da fonte ao longo do tempo | ADV1 | Testes contínuos em todo lote; comparação entre sessões | E1 | Médio |
 | T8 | Superestimar a entropia | ADV1, ADV10 | Mínimo de dois estimadores; margem de 128 bits no extrator; nunca alegar conformidade com SP 800-90B | Revisão, comparação opcional com ferramenta do NIST | Médio |
-| T9 | Recibo alterado ou forjado | ADV5 | Assinatura ML-DSA-65 sobre JSON canônico; cadeia de hashes; `eal verify` | Testes de adulteração | Baixo, se a chave do emissor estiver protegida |
+| T9 | Recibo alterado, forjado ou removido do fim da cadeia | ADV5 | Assinatura ML-DSA-65 sobre JSON canônico; cadeia de hashes; `eal verify`; para a remoção do fim, cabeça da cadeia guardada fora do log e passada em `--expected-head` (o protótipo ainda não a guarda) | Testes de adulteração; demo de 31/10/2026, passos 8 e 9 | Baixo para alteração, se a chave do emissor estiver protegida; **alto para a remoção dos últimos recibos sem cabeça guardada fora do log** |
 | T10 | Vazamento da semente ou de chaves | ADV10 | Só em memória; recibo só com hashes; proibido `print`; teste que procura segredos nas saídas | Teste automatizado | Baixo (alto se ADV7) |
 | T11 | Vazamento do token IBM | ADV10 | `.env` no `.gitignore`; nunca colar em chat; gerar outro se exposto | Checagem antes de cada commit | Baixo |
 | T12 | Estouro do orçamento de QPU | ADV10 | Limite duro em `qpu_ibm.py`; log de uso por job | Teste do limite com valores simulados | Baixo |
@@ -106,7 +106,7 @@ Cada garantia vale **somente** sob as premissas da seção 8.
 | G1 | Falhas grosseiras de fonte (bits travados, viés persistente acima do limiar, repetição de lote) são detectadas por lote, com taxa de falso alarme `α = 2^-40` por amostra no RCT e `α = 2^-20` por janela no APT (cerca de 5 × 10^-7 e 8 × 10^-4 por lote de 1 milhão de bits), por desenho do teste | Entropia declarada `H` correta para a fonte |
 | G2 | **Fail-closed:** sem ao menos uma fonte local aprovada e não simulada, nenhuma semente e nenhuma chave são geradas | Política do mixer não alterada |
 | G3 | A semente é imprevisível para quem não conhece a saída da fonte local aprovada, **incluindo o provedor da QPU** | P1, P2, P3 |
-| G4 | Todo recibo é assinado com ML-DSA-65 e encadeado ao anterior; qualquer alteração é detectada pelo `eal verify` | Chave do emissor não comprometida |
+| G4 | Todo recibo é assinado com ML-DSA-65 e encadeado ao anterior; a alteração de um recibo ou do meio da cadeia é detectada pelo `eal verify`. A remoção dos últimos recibos só é detectada se o verificador tiver a cabeça da cadeia guardada fora do log (`--expected-head`); sem ela, uma cadeia sem o fim continua válida (ver N13) | Chave do emissor não comprometida; para a remoção do fim, cabeça guardada fora do log |
 | G5 | Recibos não contêm segredos, somente hashes | Código conforme `PROJECT.md` |
 | G6 | Cada semente tem proveniência registrada: fontes, versões, job IDs, resultados dos testes, estimativas e parâmetros do extrator | — |
 | G7 | O consumo de QPU nunca passa do orçamento configurado | Todo envio passa por `qpu_ibm.py` |
@@ -130,6 +130,7 @@ Cada garantia vale **somente** sob as premissas da seção 8.
 | N10 | Que o simulador seja fonte de entropia | O Aer usa gerador pseudoaleatório clássico |
 | N11 | Proteção da chave do emissor em disco | Arquivo local sem HSM nem cifragem |
 | N12 | Resistência a ataques físicos ou de canal lateral | Fora do escopo do protótipo |
+| N13 | Detectar a remoção dos últimos recibos da cadeia sem uma cabeça guardada fora do log | Um log sem o fim continua sendo uma cadeia válida; o protótipo imprime a cabeça no `run`, mas não a guarda |
 
 ---
 
@@ -185,3 +186,15 @@ Se uma premissa cair, as garantias que dependem dela caem junto, e isso deve ser
 - Ao trocar a biblioteca PQC.
 - Se um experimento contradisser uma hipótese ou uma garantia.
 - Antes de qualquer uso fora do protótipo.
+
+<!-- revisao-v11:start -->
+## 12. Histórico de revisões
+
+### v1.1 (31/10/2026)
+
+**Motivo.** Um experimento contradisse uma garantia (seção 11, quarto item). Na demo ponta a ponta de 31/10/2026 (`scripts/demo_dia5.py`, passos 8 e 9), um log com o último recibo apagado continuou válido no `eal verify`, e só a cabeça da cadeia anotada antes (`--expected-head`) o reprovou. Isso contradiz a redação da v1.0 de G4 ("qualquer alteração é detectada").
+
+**O que mudou.** G4 reescrita; T9 com risco residual separado; N13 criada; AT4 atualizada; versão e data no cabeçalho.
+
+**O que não mudou.** Adversários, premissas, G1 a G3, G5 a G8 e as demais não garantias. Nenhum resultado do Dia 5 os contradisse. O código da CLI e da cadeia ainda não passou pela revisão adversarial do fechamento do Dia 5, e esta revisão do modelo não o cobre.
+<!-- revisao-v11:end -->
