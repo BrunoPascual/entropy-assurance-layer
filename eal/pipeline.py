@@ -62,6 +62,9 @@ class SourceOutcome:
     status: str
     batch_id: str | None = None
     reasons: tuple[str, ...] = ()
+    # G6: cópia rasa dos params do lote (job_id etc.), só para o recibo. Fica fora do
+    # to_dict() e da comparação; quem decide o que vai para o recibo é o builder.
+    params: dict[str, Any] | None = field(default=None, repr=False, compare=False)
 
 
 @dataclass(frozen=True)
@@ -140,6 +143,12 @@ def _extract(batch: Any, report: Any, seed_source: Any) -> tuple[ExtractionResul
         return None, f"extração falhou: {type(exc).__name__}"
 
 
+def _batch_params(batch: Any) -> dict[str, Any] | None:
+    """Cópia rasa dos params do lote (G6); None se o lote não tiver um dict."""
+    params = getattr(batch, "params", None)
+    return dict(params) if isinstance(params, dict) else None
+
+
 def _process(
     source: Any, seed_source: Any, n_bits: int, h_declared: float, detector: Any, health_fn: Callable[..., Any]
 ) -> tuple[SourceOutcome, MixInput | None]:
@@ -154,11 +163,14 @@ def _process(
         report = health_fn(batch, detector, h_declared)
     except Exception as exc:
         reason = f"teste de saúde falhou: {type(exc).__name__}"
-        return SourceOutcome(sid, "health_failed", batch.batch_id, (reason,)), None
+        return SourceOutcome(sid, "health_failed", batch.batch_id, (reason,), _batch_params(batch)), None
     extraction, problem = _extract(batch, report, seed_source)
     if extraction is None:
-        return SourceOutcome(sid, "extraction_failed", batch.batch_id, (str(problem),)), None
-    return SourceOutcome(sid, "candidate", batch.batch_id), make_mix_input(batch, report, extraction)
+        return SourceOutcome(
+            sid, "extraction_failed", batch.batch_id, (str(problem),), _batch_params(batch)
+        ), None
+    outcome = SourceOutcome(sid, "candidate", batch.batch_id, (), _batch_params(batch))
+    return outcome, make_mix_input(batch, report, extraction)
 
 
 def _final_outcomes(
