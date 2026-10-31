@@ -86,3 +86,8 @@ RECEIPT_BATCH_PARAM_INT_KEYS: tuple[str, ...] = ("shots", "qubits")
 RECEIPT_BATCH_PARAM_TEXT_PATTERN: str = r"[A-Za-z0-9._-]{1,64}"  # texto curto, sem espaço nem barra
 RECEIPT_BATCH_PARAM_INT_MAX: int = 10**9
 RECEIPT_JOB_ID_REQUIRED_TYPES: tuple[str, ...] = ("qpu_ibm",)  # lote desses tipos exige job_id
+
+# --- F12: histórico do detector de replay entre execuções (Dia 6) ---
+REPLAY_HISTORY_NAME: str = "replay_history.json"  # em data/logs/, fora do Git
+REPLAY_HISTORY_SCHEMA: str = "eal-replay-history-v1"
+REPLAY_HISTORY_MAX_BYTES: int = 64 * 1024 * 1024  # acima disso, recusa ler e gravar (fail-closed)
