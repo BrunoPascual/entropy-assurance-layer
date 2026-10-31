@@ -68,8 +68,9 @@ def _input(sid, batch_id, input_hash, local, sim, approved=True, kind="toeplitz"
                            report=_report(approved), extraction=_extraction(kind))
 
 
-def _outcome(sid, status, batch_id=None, reasons=()):
-    return SimpleNamespace(source_id=sid, status=status, batch_id=batch_id, reasons=reasons)
+def _outcome(sid, status, batch_id=None, reasons=(), params=None):
+    return SimpleNamespace(source_id=sid, status=status, batch_id=batch_id, reasons=reasons,
+                           params=params)
 
 
 def _mix(seed=SEED, mode="keygen", usable=True, meta=None):
@@ -87,8 +88,8 @@ def _scenario(**over):
     inputs = [_input("os", "b-os", H1, True, False),
               _input("ibm_x", "b-x", H2, False, False),
               _input("ibm_ruim", "b-r", H3, False, False, approved=False, kind="none")]
-    outcomes = [_outcome("os", "mixed", "b-os"), _outcome("ibm_x", "mixed", "b-x"),
-                _outcome("ibm_ruim", "excluded", "b-r", ("APT: viés",)),
+    outcomes = [_outcome("os", "mixed", "b-os"), _outcome("ibm_x", "mixed", "b-x", params={"job_id": "job-x-1"}),
+                _outcome("ibm_ruim", "excluded", "b-r", ("APT: viés",), params={"job_id": "job-r-1"}),
                 _outcome("ibm_fora", "read_failed", None, ("leitura falhou: TimeoutError",))]
     result = SimpleNamespace(mode="keygen", outcomes=tuple(outcomes), mix=_mix(),
                              error=None, inputs=tuple(inputs))

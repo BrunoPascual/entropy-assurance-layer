@@ -3,7 +3,8 @@
 Entradas: o PipelineResult, as DerivedKeys e os objetos Source usados na execução.
 O PipelineResult não guarda os lotes; por isso source_type e source_version vêm
 do objeto Source, e o hash do lote é o input_hash do MixInput (mesma convenção
-do batch_hash). Os params do lote (ex.: job_id da IBM) ainda não chegam aqui.
+do batch_hash). Os params do lote (G6) vêm do SourceOutcome; só as chaves da lista
+fechada de config.py entram, no bloco batch_params de cada fonte.
 
 Regras:
   - só modo keygen, com semente; qualquer inconsistência levanta ValueError
@@ -34,12 +35,15 @@ from eal.config import (
     EXTRACTOR_INPUT_BITS,
     GENESIS_PREV_HASH,
     ISSUER_DOMAIN,
+    RECEIPT_BATCH_PARAM_INT_KEYS,
+    RECEIPT_BATCH_PARAM_TEXT_KEYS,
     RECEIPT_EXTRACTOR_TYPE,
+    RECEIPT_JOB_ID_REQUIRED_TYPES,
     RECEIPT_ID_NAMESPACE,
     RECEIPT_REQUIRED_LIMITATIONS,
 )
 from eal.pqc.keygen import DerivedKeys, derive_keys_from_mix
-from eal.receipt.schema import KEYGEN_MODE, MIXED_STATUS, validate_body
+from eal.receipt.schema import KEYGEN_MODE, MIXED_STATUS, batch_param_problems, validate_body
 
 SOFTWARE_PACKAGES = ("kyber-py", "dilithium-py", "numpy", "scipy")
 
@@ -51,7 +55,8 @@ SOFTWARE_PACKAGES = ("kyber-py", "dilithium-py", "numpy", "scipy")
 # numa dessas classes precisa entrar aqui de propósito; os testes travam as listas.
 SOURCE_ENTRY_KEYS = frozenset({
     "source_id", "source_type", "source_version", "status", "batch_id", "batch_hash",
-    "is_local", "is_simulated", "approved", "reasons", "health", "extraction"
+    "is_local", "is_simulated", "approved", "reasons", "health", "extraction",
+    "batch_params"
 })
 HEALTH_KEYS = frozenset({  # os 35 campos de eal.health.report.HealthReport
     "schema", "batch_id", "source_id", "n_bits", "h_declared", "rct_pass", "rct_cutoff",
@@ -158,6 +163,35 @@ def _by_id(items: Sequence[Any], what: str) -> dict[str, Any]:
     return out
 
 
+def clean_batch_params(params: Any) -> dict[str, Any]:
+    """G6: só as chaves da lista fechada (config.py) vão para o recibo; o resto é descartado.
+
+    Token, semente e qualquer outro campo do lote ficam de fora por construção. Valor inválido
+    numa chave permitida recusa o recibo; a mensagem cita o nome do campo, nunca o valor.
+    """
+    if params is None:
+        return {}
+    if not isinstance(params, dict):
+        raise ValueError("params do lote não é objeto")
+    clean: dict[str, Any] = {}
+    for key in (*RECEIPT_BATCH_PARAM_TEXT_KEYS, *RECEIPT_BATCH_PARAM_INT_KEYS):
+        if key in params:
+            value = params[key]
+            clean[key] = int(value) if isinstance(value, np.integer) else value
+    problems = batch_param_problems(clean, "batch_params")
+    if problems:
+        raise ValueError("params do lote inválidos: " + "; ".join(problems))
+    return clean
+
+
+def _require_job_id(outcome: Any, src: Any, entry: dict[str, Any]) -> None:
+    """Fonte de tipo que exige job_id (qpu_ibm) com lote lido sem job_id: recusa o recibo."""
+    if (outcome.batch_id is not None
+            and str(src.source_type) in RECEIPT_JOB_ID_REQUIRED_TYPES
+            and "job_id" not in entry["batch_params"]):
+        raise ValueError(f"fonte do tipo {src.source_type} sem job_id nos params do lote")
+
+
 def _source_entry(outcome: Any, src: Any, mi: Any) -> dict[str, Any]:
     is_local = _strict_bool(getattr(src, "is_local", None), "is_local da fonte")
     is_simulated = _strict_bool(getattr(src, "is_simulated", None), "is_simulated da fonte")
@@ -174,7 +208,9 @@ def _source_entry(outcome: Any, src: Any, mi: Any) -> dict[str, Any]:
         "reasons": [str(r) for r in outcome.reasons],
         "health": None,
         "extraction": None,
+        "batch_params": clean_batch_params(getattr(outcome, "params", None)),
     }
+    _require_job_id(outcome, src, entry)
     if mi is None:
         return entry
     if (_strict_bool(mi.is_local, "is_local do lote") != is_local

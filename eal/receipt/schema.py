@@ -14,7 +14,14 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any
 
-from eal.config import RECEIPT_REQUIRED_LIMITATIONS
+from eal.config import (
+    RECEIPT_BATCH_PARAM_INT_KEYS,
+    RECEIPT_BATCH_PARAM_INT_MAX,
+    RECEIPT_BATCH_PARAM_TEXT_KEYS,
+    RECEIPT_BATCH_PARAM_TEXT_PATTERN,
+    RECEIPT_JOB_ID_REQUIRED_TYPES,
+    RECEIPT_REQUIRED_LIMITATIONS,
+)
 
 KEYGEN_MODE = "keygen"
 MIXED_STATUS = "mixed"
@@ -27,6 +34,8 @@ SIGNATURE_FIELDS = frozenset({"alg", "issuer_pk_hash", "value"})
 KEY_FIELDS = frozenset({"ml_kem_768_pk_hash", "ml_dsa_65_pk_hash"})
 SOURCE_REQUIRED = frozenset({"source_id", "status", "is_local", "is_simulated", "approved"})
 _HEX64 = re.compile(r"[0-9a-f]{64}")
+_PARAM_TEXT = re.compile(RECEIPT_BATCH_PARAM_TEXT_PATTERN)
+BATCH_PARAM_KEYS = frozenset((*RECEIPT_BATCH_PARAM_TEXT_KEYS, *RECEIPT_BATCH_PARAM_INT_KEYS))
 
 
 def canonical_bytes(obj: Any) -> bytes:
@@ -153,6 +162,39 @@ def _check_one_source(i: int, src: dict, seen: set[str]) -> list[str]:
     for flag in ("is_local", "is_simulated", "approved"):
         if type(src[flag]) is not bool:
             problems.append(f"sources[{i}].{flag} não é booleano")
+    problems += _check_batch_params(i, src)
+    return problems
+
+
+def batch_param_problems(params: object, where: str) -> list[str]:
+    """Problemas dos params do lote no recibo (G6). Cita só nomes de campos, nunca valores."""
+    if not isinstance(params, dict):
+        return [f"{where} não é objeto"]
+    problems: list[str] = []
+    extra = params.keys() - BATCH_PARAM_KEYS
+    if extra:
+        problems.append(f"{where} com campos não previstos: {sorted(map(str, extra))}")
+    for key in RECEIPT_BATCH_PARAM_TEXT_KEYS:
+        if key in params:
+            value = params[key]
+            if not (type(value) is str and _PARAM_TEXT.fullmatch(value)):
+                problems.append(f"{where}.{key} inválido")
+    for key in RECEIPT_BATCH_PARAM_INT_KEYS:
+        if key in params:
+            value = params[key]
+            if not (type(value) is int and 1 <= value <= RECEIPT_BATCH_PARAM_INT_MAX):
+                problems.append(f"{where}.{key} inválido")
+    return problems
+
+
+def _check_batch_params(i: int, src: dict) -> list[str]:
+    """batch_params é opcional (recibos antigos não têm), mas fonte que exige job_id o traz."""
+    where = f"sources[{i}].batch_params"
+    params = src.get("batch_params")
+    problems = batch_param_problems(params, where) if "batch_params" in src else []
+    needs_job = src.get("source_type") in RECEIPT_JOB_ID_REQUIRED_TYPES and src.get("batch_hash") is not None
+    if needs_job and not (isinstance(params, dict) and "job_id" in params):
+        problems.append(f"{where}.job_id ausente em fonte que exige job_id")
     return problems
 
 

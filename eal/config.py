@@ -76,3 +76,13 @@ EAL_VERSION: str = _PACKAGE_VERSION
 ISSUER_DOMAIN: bytes = b"EAL-v1|issuer|ML-DSA-65|"  # semente da chave do emissor
 RECEIPT_ID_NAMESPACE: str = "06ed644d-898c-5a92-b681-f8e5ce512ab7"  # uuid5(NAMESPACE_URL, "urn:eal:v1:receipt-id")
 RECEIPT_EXTRACTOR_TYPE: str = "toeplitz"
+
+# --- G6: params do lote no recibo (Dia 6) ---
+# Lista fechada: só estas chaves de RawBatch.params vão para o recibo (bloco "batch_params" da
+# fonte). Token, semente e qualquer outro campo ficam de fora por construção. O adaptador da
+# QPU precisa usar exatamente estes nomes.
+RECEIPT_BATCH_PARAM_TEXT_KEYS: tuple[str, ...] = ("backend", "job_id")
+RECEIPT_BATCH_PARAM_INT_KEYS: tuple[str, ...] = ("shots", "qubits")
+RECEIPT_BATCH_PARAM_TEXT_PATTERN: str = r"[A-Za-z0-9._-]{1,64}"  # texto curto, sem espaço nem barra
+RECEIPT_BATCH_PARAM_INT_MAX: int = 10**9
+RECEIPT_JOB_ID_REQUIRED_TYPES: tuple[str, ...] = ("qpu_ibm",)  # lote desses tipos exige job_id
