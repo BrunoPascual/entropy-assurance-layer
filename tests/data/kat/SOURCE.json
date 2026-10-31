@@ -1,11 +1,16 @@
 {
   "fonte": "https://github.com/usnistgov/ACVP-Server (gen-val/json-files)",
   "branch": "master",
-  "commit": "não registrado (a API do GitHub estava com limite de requisições)",
+  "commit": "por arquivo; ver arquivos[*].commit (verificado pelo SHA3-256 do conteúdo)",
   "baixado_em": "2026-10-30T18:27:24.422057+00:00",
+  "verificado_em": "2026-10-31",
+  "metodo_verificacao": "git show <commit>:<caminho> em clone do histórico do ACVP-Server; tamanho e SHA3-256 do conteúdo iguais aos registrados",
+  "master_consultado": "975de31eb83d87039ec88934fdc47d8c312b892d",
   "arquivos": {
     "ml_kem_768_keygen.json": {
       "url": "https://raw.githubusercontent.com/usnistgov/ACVP-Server/master/gen-val/json-files/ML-KEM-keyGen-FIPS203/internalProjection.json",
+      "commit": "15c0f3deeefbfa8cb6cd32a99e1ca3b738c66bf0",
+      "commit_data": "2026-04-16T16:41:44-04:00",
       "parameterSet": "ML-KEM-768",
       "vsId": 42,
       "testes": 25,
@@ -15,6 +20,8 @@
     },
     "ml_dsa_65_keygen.json": {
       "url": "https://raw.githubusercontent.com/usnistgov/ACVP-Server/master/gen-val/json-files/ML-DSA-keyGen-FIPS204/internalProjection.json",
+      "commit": "2972def23bf9f3680c2c531561ed9bdd0f1086ad",
+      "commit_data": "2026-07-20T16:31:36-04:00",
       "parameterSet": "ML-DSA-65",
       "vsId": 42,
       "testes": 25,

@@ -3,7 +3,7 @@
 - **Versão do documento:** 1.0
 - **Data:** 27/10/2026
 - **Autor:** Bruno Pascual
-- **Status:** Dia 4 de 9 (concluído; gate do Dia 4 aprovado, ver seção 16.2)
+- **Status:** Dia 5 de 9 (gate do Dia 5 aprovado, ver seção 16.3; fechamento do dia pendente: revisão adversarial e seção 11 do THREAT_MODEL)
 - **Documento irmão:** `THREAT_MODEL.md` (modelo de ameaça)
 
 > Este arquivo é a fonte de verdade do projeto. Cole-o no início de cada sessão com a IA.
@@ -886,6 +886,16 @@ Gerado por `scripts/registrar_gate_dia5.py` a partir de `data/results/dia5_gate_
 - O gate confere fluxo, cadeia e chaves no disco. Não mede a qualidade estatística da semente nem a taxa de detecção de fontes defeituosas (isso é o E2).
 <!-- dia5-gate:end -->
 
+<!-- dia5-nota:start -->
+**Nota sobre o gate do Dia 5.** O gate cumpre o fluxo abaixo. Não é um comando único que faz tudo:
+
+- `py -3.12 -m eal init-issuer` cria a chave do emissor de recibos. Precisa existir antes do primeiro `run`.
+- `py -3.12 -m eal run` deriva as chaves ML-KEM-768 e ML-DSA-65 da semente e grava no log encadeado o recibo assinado com ML-DSA-65. Ele não cria a chave do emissor.
+- `py -3.12 -m eal verify <recibo>` confere a assinatura, o formato e a posição do recibo na cadeia.
+
+As chaves privadas derivadas ficam só em memória (AT2 do THREAT_MODEL). A exceção `--export-demo` não faz parte deste gate.
+<!-- dia5-nota:end -->
+
 ## 17. Limitações conhecidas
 
 1. Protótipo de pesquisa; não usar para proteger dados reais.
@@ -922,7 +932,7 @@ Gerado por `scripts/registrar_gate_dia5.py` a partir de `data/results/dia5_gate_
 ### Limitações do Dia 5 (etapa 1: derivação PQC)
 
 - Os vetores oficiais (NIST ACVP) cobrem o `key_derive` das bibliotecas, não a derivação da EAL (SHAKE256 com prefixo de domínio sobre a semente), que não tem vetor oficial e é verificada contra `hashlib` no teste.
-- Os vetores são o subconjunto de ML-KEM-768 e ML-DSA-65 do branch master do ACVP-Server, baixado em 30/10/2026; o commit exato não foi registrado.
+- Os vetores são o subconjunto de ML-KEM-768 e ML-DSA-65 do branch master do ACVP-Server, baixado em 30/10/2026; o commit de cada arquivo foi verificado pelo SHA3-256 do conteúdo original: ML-KEM-768 `15c0f3deeefbfa8cb6cd32a99e1ca3b738c66bf0`, ML-DSA-65 `2972def23bf9f3680c2c531561ed9bdd0f1086ad` (ver `tests/data/kat/SOURCE.json`).
 - Os vetores cobrem geração de chave. Encapsulamento, decapsulamento, assinatura e verificação são testados por ida e volta e adulteração, sem vetores oficiais.
 - O teste de sigilo procura trechos secretos definidos pelo formato FIPS 203/204. O início da chave privada do ML-DSA (`ρ`) é público, então o teste procura `K`; se uma versão futura da biblioteca mudar o formato, o teste `test_sk_do_ml_dsa_comeca_com_rho_publico` avisa.
 - Bibliotecas em Python puro: sem tempo constante e sem auditoria (T15, N5). A semente fica em `bytes`, que o Python não apaga da memória (P1).
