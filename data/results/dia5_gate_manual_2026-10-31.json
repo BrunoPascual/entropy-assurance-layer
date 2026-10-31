@@ -1,0 +1,38 @@
+{
+  "data": "2026-10-31, máquina do usuário, fonte os real, comandos py -3.12 -m eal",
+  "init_issuer": "código 0; pk_hash 729e5cfbd664fafc6b444050f6cae2863b7a6fdf4bf20e2369b5e52dd14d57d0; .sk e .pk ignoradas pelo Git (.gitignore:6 keys/*.sk e :14 keys/*.pk).",
+  "runs": [
+    {
+      "tentativa": 1,
+      "codigo": 0,
+      "receipt_id": "20388d1d-5896-5efe-9e16-67c964db7f60",
+      "seed_hash": "4d42873eb3a99f077fc16a4c09f01d8a175f66482a119b2f500c1eabb477a6e8",
+      "ml_kem_768_pk_hash": "b82cf0c2d6f57a71139f5032cda011060ef1a0adf5281eee3fae0d17838c7bd9",
+      "ml_dsa_65_pk_hash": "2a473104b7b98a5d8daa8f58b1a1e96bfef146cb6091aa958d04e22e159db808",
+      "fontes": "os=mixed",
+      "cabeca": "9f3cf4dcf3d3e6acb4bb53aad3391a6611269d9cdce1af096a3f425377f27001"
+    },
+    {
+      "tentativa": 2,
+      "codigo": 0,
+      "receipt_id": "8efb7176-2edd-5b97-bb5f-4e11709b5d92",
+      "seed_hash": "b0e5106433359e629777d198829c1396f40c123f5c70864c79732f9488911aed",
+      "ml_kem_768_pk_hash": "983cf9ed4a2649236396d38265ba3abfdea7d2b2d63cf0ba4303a3f108e4a509",
+      "ml_dsa_65_pk_hash": "22229e42df74a7242bea251aa1a1fc5ab72e103e64017752e1b02434ddeda587",
+      "fontes": "os=mixed",
+      "cabeca": "ae6b331a3db5d81b43a1ebbbe8c2661b21ac8d4761fb8938a6e089b691d1687a"
+    }
+  ],
+  "checagens_todas_ok": [
+    "verify do último recibo + --expected-head (posição 2 de 2, cabeça conferida): código 0",
+    "verify do penúltimo recibo (posição 1 de 2): código 0",
+    "verify de cópia igual com outro nome e --chain-dir: código 0",
+    "verify de cópia ADULTERADA ('mode':'keygen' -> 'keygex', cópia em %TEMP%): código 1, 'recibo reprovado'",
+    "verify com cabeça errada ('a'*64): código 1, 'cadeia reprovada'"
+  ],
+  "outros": "Chaves públicas com 2369 e 3905 bytes (2 x tamanho + 1, sem \\r). git status sem nada de keys/ nem data/. Nenhuma falha registrada. Duas execuções só: não generalizar (ex.: não afirmar taxa de fail-closed).",
+  "origem": {
+    "bloco": "gate_manual_dia5_resultado",
+    "handoff_sha3_256": "906ee784e14b24812c3db84f62d1eb5afd7add1d5644307033645fdbe11f7c2d"
+  }
+}

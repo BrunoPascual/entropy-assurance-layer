@@ -853,6 +853,39 @@ Medido em 2026-10-30T13:52:03.537145+00:00 (commit `d98e8bb`). Tabela: `data/res
 **O que este gate não mostra.** A fonte "remota" dos cenários `keygen` é um stand-in (bits da `os` com rótulo de fonte remota não simulada), não a QPU da IBM. O gate verifica política, isolamento e fail-closed; não mede a qualidade estatística da semente (o SHA3-512 de lixo também parece uniforme) nem a taxa de detecção de fontes defeituosas, com 5 repetições por cenário (isso é o E2). O CSV guarda só o SHA3-256 da semente; nenhuma semente nem bit é gravado.
 <!-- dia4-gate:end -->
 
+<!-- dia5-gate:start -->
+### 16.3 Gate manual do Dia 5 (execução real na máquina do autor)
+
+Gerado por `scripts/registrar_gate_dia5.py` a partir de `data/results/dia5_gate_manual_2026-10-31.json` (SHA3-256 `00a967715daef34d650310018f47e386f0a3b55632e2c8b08a9c8dec1924ec15`). Nenhum número foi digitado à mão. Antes de gravar, o script conferiu cada recibo, cabeça e chave pública contra o log e os arquivos em `data/receipts/`, e confirmou no Git que as chaves e o log ficam fora do controle de versão. O JSON veio do bloco `gate_manual_dia5_resultado` do handoff (SHA3-256 `906ee784e14b24812c3db84f62d1eb5afd7add1d5644307033645fdbe11f7c2d`).
+
+**Origem.** 2026-10-31, máquina do usuário, fonte os real, comandos py -3.12 -m eal.
+
+**Execuções.**
+
+| Tentativa | Código | receipt_id | seed_hash | ML-KEM-768 (pk_hash) | ML-DSA-65 (pk_hash) | Fontes | Cabeça após a execução |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 0 | 20388d1d-5896-5efe-9e16-67c964db7f60 | 4d42873eb3a99f077fc16a4c09f01d8a175f66482a119b2f500c1eabb477a6e8 | b82cf0c2d6f57a71139f5032cda011060ef1a0adf5281eee3fae0d17838c7bd9 | 2a473104b7b98a5d8daa8f58b1a1e96bfef146cb6091aa958d04e22e159db808 | os=mixed | 9f3cf4dcf3d3e6acb4bb53aad3391a6611269d9cdce1af096a3f425377f27001 |
+| 2 | 0 | 8efb7176-2edd-5b97-bb5f-4e11709b5d92 | b0e5106433359e629777d198829c1396f40c123f5c70864c79732f9488911aed | 983cf9ed4a2649236396d38265ba3abfdea7d2b2d63cf0ba4303a3f108e4a509 | 22229e42df74a7242bea251aa1a1fc5ab72e103e64017752e1b02434ddeda587 | os=mixed | ae6b331a3db5d81b43a1ebbbe8c2661b21ac8d4761fb8938a6e089b691d1687a |
+
+**Chave do emissor.** código 0; pk_hash 729e5cfbd664fafc6b444050f6cae2863b7a6fdf4bf20e2369b5e52dd14d57d0; .sk e .pk ignoradas pelo Git (.gitignore:6 keys/*.sk e :14 keys/*.pk).
+
+**Checagens.**
+
+- verify do último recibo + --expected-head (posição 2 de 2, cabeça conferida): código 0
+- verify do penúltimo recibo (posição 1 de 2): código 0
+- verify de cópia igual com outro nome e --chain-dir: código 0
+- verify de cópia ADULTERADA ('mode':'keygen' -> 'keygex', cópia em %TEMP%): código 1, 'recibo reprovado'
+- verify com cabeça errada ('a'*64): código 1, 'cadeia reprovada'
+
+**Outras conferências na data do gate.** Chaves públicas com 2369 e 3905 bytes (2 x tamanho + 1, sem \r). git status sem nada de keys/ nem data/. Nenhuma falha registrada. Duas execuções só: não generalizar (ex.: não afirmar taxa de fail-closed).
+
+**O que este gate mostra e o que não mostra.**
+
+- 2 execução(ões) com a fonte `os`. São dados de um dia, não uma taxa: com elas não dá para estimar a frequência de falhas por acaso.
+- A fonte é a `os`, cuja imprevisibilidade é premissa (P3). A QPU da IBM não entrou nesta execução, e a CLI ainda não tem coleta de QPU.
+- O gate confere fluxo, cadeia e chaves no disco. Não mede a qualidade estatística da semente nem a taxa de detecção de fontes defeituosas (isso é o E2).
+<!-- dia5-gate:end -->
+
 ## 17. Limitações conhecidas
 
 1. Protótipo de pesquisa; não usar para proteger dados reais.
