@@ -144,7 +144,7 @@ class Source(ABC):
 | `bits` | `numpy.ndarray[uint8]` | Valores 0/1, um por posição |
 | `n_bits` | int | Quantidade de bits |
 | `created_at` | str | ISO 8601 em UTC |
-| `params` | dict | Ex.: backend, qubits, shots, job_id, modelo de ruído |
+| `params` | dict | Ex.: backend, qubits, shots, job_id, modelo de ruído. Só as chaves da lista fechada de `eal/config.py` (`RECEIPT_BATCH_PARAM_*`) chegam ao recibo (G6) |
 | `batch_hash` | str | SHA3-256 de `n_bits` (8 bytes, big-endian) seguido dos bits empacotados com `numpy.packbits` (detecção de replay e de alteração) |
 
 ### 6.3 Fontes
@@ -422,6 +422,7 @@ Determinística a partir da semente, com separação de domínio:
 2. A assinatura cobre o JSON canônico de todos os campos exceto `signature` (chaves ordenadas, sem espaços, UTF-8).
 3. `prev_receipt_hash` encadeia os recibos (hash do recibo anterior COMPLETO, com assinatura); o log fica em `data/receipts/chain.jsonl` e é descrito logo abaixo.
 4. Verificação (`eal verify`): recalcula o JSON canônico, confere a assinatura com a chave pública do emissor e confere o encadeamento.
+5. Params do lote (G6, Dia 6): só as chaves da lista fechada em `eal/config.py` entram no bloco `batch_params` de cada fonte; token, semente e demais campos ficam de fora. Fonte `qpu_ibm` com lote exige `job_id` (recusa o recibo). Recibos anteriores ao G6 não têm o bloco e continuam válidos.
 
 **Construtor do recibo (Dia 5, etapa 2B, `eal/receipt/builder.py`).** Monta o corpo do recibo a partir do `PipelineResult`, das `DerivedKeys` e dos objetos `Source`. Cada fonte traz `source_type`, `source_version`, `status`, `batch_id`, `batch_hash` (o `input_hash` do lote), flags, `approved`, motivos, o `HealthReport` e os metadados da extração, incluindo o `seed_hash` da semente Toeplitz daquela fonte. O bloco `extractor` de topo traz só tipo, `n` e `epsilon_log2`. O `receipt_id` é UUID5 do `seed_hash`. As chaves são re-derivadas da semente e conferidas. Fontes que falharam entram com `approved: false` e o motivo, sem mensagem de exceção.
 
@@ -925,6 +926,8 @@ Feita por leitura do código, em partes, a partir do arquivo que o coletor gera 
 **Resolvido sem mudança de código:** `save_issuer_key` grava em modo exclusivo; os quatro prefixos de domínio da semente (`EAL-v1|ML-KEM-768|`, `EAL-v1|ML-DSA-65|`, `EAL-v1|issuer|ML-DSA-65|` e `EAL-v1-mix`) são distintos e nenhum é prefixo de outro (executado); `PipelineResult.to_dict()` e `MixResult.to_dict()` são listas fixas de campos; um `--bits` abaixo de 1.000.000 não aprova a fonte, porque o teste estatístico fica inconclusivo (leitura).
 
 **Pendência para o Dia 6, vinda da revisão:** persistir o histórico do detector de replay entre execuções antes de usar a fonte da IBM (F12). Hoje cada `eal run` começa com o histórico vazio.
+**G6 (Dia 6, resolvido):** params do lote no recibo. Passo 1 (`df231d7`): `SourceOutcome` carrega os params, fora do `to_dict()`. Passo 2 (`e0b4dd4`): lista fechada em `config.py`, bloco `batch_params` no builder e no esquema, `job_id` obrigatório em `qpu_ibm`. Verificação: suíte com 1623 passed e 1 skipped; cadeia real válida (posição 2 de 2, cabeça conferida); recibos antigos sem o bloco continuam válidos.
+
 <!-- dia5-revisao:end -->
 
 ## 17. Limitações conhecidas
@@ -997,10 +1000,17 @@ Feita por leitura do código, em partes, a partir do arquivo que o coletor gera 
 
 ### Limitações do Dia 5 (etapa 2: recibo)
 
-- Os `params` do lote (ex.: `job_id` da IBM) não chegam ao recibo, porque o `PipelineResult` não guarda os lotes. Pendente antes da coleta do Dia 6 (G6).
+- Os `params` do lote (ex.: `job_id` da IBM) não chegavam ao recibo. Resolvido no Dia 6 (G6): ver a seção "Limitações do Dia 6 (G6)" abaixo.
 - O recibo é verificável por este código em Python; o JSON canônico com números de ponto flutuante não foi testado contra um verificador em outra linguagem.
 - O teste de integração usa uma fonte determinística (SHAKE256) no lugar da `os`, para não falhar por acaso; ela não é fonte de entropia e só existe nos testes.
 - A chave do emissor depende só da fonte `os` (P3) e fica em disco sem cifragem (N11).
+
+### Limitações do Dia 6 (G6: params do lote)
+
+- Recibos anteriores ao G6 não têm o bloco `batch_params`; a verificação aceita a ausência, então eles continuam válidos, mas não provam o `job_id` de nenhuma coleta.
+- Os nomes das chaves (`backend`, `job_id`, `shots`, `qubits`) e os formatos (texto de até 64 caracteres, inteiros de 1 a 10⁹) são as premissas deste protótipo. O adaptador da IBM ainda não existe: os nomes e os formatos reais do `job_id` e do número de qubits precisam ser conferidos na documentação do qiskit-ibm-runtime antes da coleta. Se o provedor usar outro formato, o recibo é recusado (fail-closed).
+- O `job_id` é guardado em claro no recibo. Ele não é segredo, mas revela que o job existiu na conta.
+- O recibo prova os params que o código entregou ao builder, não que a API da IBM devolveu esses valores.
 
 ### Limitações do Dia 5 (etapa 3: log encadeado)
 
