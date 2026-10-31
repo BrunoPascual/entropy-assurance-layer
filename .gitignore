@@ -6,3 +6,9 @@ __pycache__/
 keys/*.sk
 data/raw/
 data/results/*.png
+data/receipts/*
+!data/receipts/.gitkeep
+data/public_keys/
+data/logs/*
+!data/logs/.gitkeep
+keys/*.pk

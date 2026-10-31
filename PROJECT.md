@@ -361,7 +361,7 @@ Determinística a partir da semente, com separação de domínio:
 - Biblioteca usada: `kyber-py` 1.2.0 e `dilithium-py` 1.5.1 (Python puro). Confirmado na etapa 1 do Dia 5: ambas expõem `key_derive` a partir de semente, e o projeto não usa `keygen()`. Os dois `key_derive` reproduzem os vetores de keyGen do NIST ACVP (25 de 25 por algoritmo); ver `tests/data/kat/SOURCE.json`.
 - Alternativa: `liboqs-python` (mais difícil de instalar no Windows).
 - Teste obrigatório: encapsular e decapsular (ML-KEM), assinar e verificar (ML-DSA), e a mesma semente gerar sempre as mesmas chaves.
-- Chaves privadas derivadas **não são gravadas em disco**, exceto com a opção explícita `--export-demo`, apenas para demonstração.
+- Chaves privadas derivadas **não são gravadas em disco**, exceto com a opção explícita `--export-demo`, apenas para demonstração. A opção ainda não existe na CLI (etapa 4); fica para a demo do Dia 9.
 
 ### 6.11 Recibo (`eal/receipt/`)
 
@@ -439,13 +439,32 @@ Determinística a partir da semente, com separação de domínio:
 
 ### 6.12 Linha de comando (`eal/cli.py`)
 
-| Comando | Faz |
-| --- | --- |
-| `py -3.12 -m eal run --sources os,qpu_sim --bits 1048576` | Pipeline completo, gera chaves e recibo |
-| `py -3.12 -m eal verify data/receipts/<id>.json` | Verifica assinatura e cadeia |
-| `py -3.12 -m eal collect-ibm --qubits 156 --shots 4096 --budget-seconds 30` | Coleta na QPU real com limite duro |
-| `py -3.12 -m eal health data/raw/<arquivo>.npy` | Roda só os testes num arquivo |
-| `py -3.12 -m eal experiment e2` | Roda um experimento |
+Uso: `py -3.12 -m eal <comando>`. Não há executável `eal` (o projeto não tem `pyproject.toml`). É um protótipo de pesquisa; a ajuda gerada pelo `argparse` tem partes em inglês.
+
+| Comando | Faz | Estado |
+| --- | --- | --- |
+| `init-issuer [--bits N] [--keys-dir D] [--logs-dir D]` | Execução `keygen` só com a fonte `os`; deriva o par ML-DSA-65 do emissor (`issuer_seed_from_mix`) e grava `keys/issuer_ml_dsa_65.sk` e `.pk`. Recusa se qualquer um dos dois já existir | Etapa 4 |
+| `run [--sources os] [--bits N] [--keys-dir D] [--receipts-dir D] [--public-keys-dir D] [--logs-dir D]` | Pipeline `keygen` com a fonte `os`, chaves ML-KEM-768 e ML-DSA-65 derivadas e recibo assinado gravado no log encadeado | Etapa 4 |
+| `verify <arquivo> [--keys-dir D] [--chain-dir D] [--sem-cadeia] [--expected-head HASH]` | Verifica o recibo, a cadeia e a posição do recibo nela | Etapa 4 |
+| `collect-ibm --qubits 156 --shots 4096 --budget-seconds 30` | Coleta na QPU real com limite duro | Ainda não existe (Dia 6) |
+| `health data/raw/<arquivo>.npy` | Roda só os testes de saúde num arquivo | Ainda não existe |
+| `experiment e2` | Roda um experimento | Ainda não existe (Dia 7) |
+
+**Códigos de saída.** 0: ok. 1: falha esperada (fail-closed, recusa, recibo ou cadeia reprovados) ou erro inesperado, que é capturado e mostra só o nome da classe da exceção. 2: erro de uso (opção ou comando inválido).
+
+**`init-issuer`.** O par do emissor vem de uma execução `keygen` própria, nunca da semente das chaves do usuário. Sem semente (fail-closed), nada é criado.
+
+**`run`.** A ordem é: (1) carrega a chave do emissor (sem ela: "rode `init-issuer`"); (2) confere a cadeia existente, e um log corrompido recusa ANTES do pipeline; (3) roda o pipeline `keygen` uma única vez (sem semente: fail-closed, sem repetição automática; a `os` pode ser reprovada por acaso, como mostra o gate do Dia 4, e rodar de novo é legítimo); (4) deriva as chaves, monta e assina o recibo e grava no log; (5) grava SÓ as chaves públicas derivadas em `data/public_keys/<receipt_id>/` (`ml_kem_768.ek.hex` e `ml_dsa_65.pk.hex`, em hex com `\n` final, modo binário, sem sobrescrever). Se o passo 5 falhar, o recibo já está no log, e a mensagem diz isso (código 1). A saída traz `receipt_id`, o caminho do recibo, o hash da semente, os hashes das chaves públicas, o estado de cada fonte e a `cabeça da cadeia`; guardá-la fora do log permite usar `--expected-head` depois. `--sources` só aceita `os`: fonte simulada ou defeituosa é erro de uso (T13) e a fonte da IBM ainda não existe.
+
+**`verify`.** Confere, nesta ordem: a chave pública do emissor (`--keys-dir`); o arquivo; o formato e a assinatura do recibo; e, a menos que haja `--sem-cadeia`, a cadeia da pasta do arquivo (ou de `--chain-dir`), com `--expected-head` se informada. O recibo precisa estar no log, o que é conferido pelo conteúdo canônico e não pelo nome do arquivo. Sem `chain.jsonl` na pasta, o erro manda usar `--chain-dir` ou `--sem-cadeia`. Com `--sem-cadeia` a saída traz "AVISO: cadeia não conferida". Em caso de sucesso imprime "recibo válido: <id>", "cadeia: posição X de N" e, com `--expected-head`, "cabeça conferida".
+
+**Pastas padrão** (relativas ao diretório atual, cada uma com opção própria): `keys/`, `data/receipts/`, `data/public_keys/` e `data/logs/`.
+
+**Log de falhas (T14).** `init-issuer` e `run` acrescentam uma linha JSON a `data/logs/eal_runs.jsonl` a cada falha, com `ts`, `command`, `stage` (`issuer_key`, `chain`, `pipeline`, `public_keys` ou `unexpected`), `ok: false`, `reason` e `pipeline` (`PipelineResult.to_dict()` ou `null`). O `verify` não grava log.
+
+**O que a saída nunca traz.** Semente, chaves privadas (derivadas ou do emissor) e o texto de exceções, só o nome da classe. Há testes para isso (T10).
+
+**Testes.** `tests/test_cli.py` (63 testes, em pastas temporárias; as fontes de teste entram por um parâmetro interno de `main`, nunca por opção da CLI; uma barreira automática impede os testes de gravar no `data/logs` real) e `scripts/mutacoes_chain_cli.py` (58 mutações manuais, 58 mortas). Isso mostra que os testes pegam esses erros, não que a CLI esteja correta.
 
 ### 6.13 Painel (`dashboard/app.py`)
 
@@ -506,22 +525,31 @@ EntropyAssuranceLayer/
 ├── data/
 │   ├── raw/                # bits crus (.npy) + metadados (.json)
 │   ├── results/            # CSVs dos experimentos
-│   ├── receipts/           # recibos e chain.jsonl
-│   └── logs/               # qpu_usage.csv
-├── keys/                   # chave do emissor (.sk no .gitignore)
+│   ├── receipts/           # recibos reais (chain.jsonl + <id>.json), fora do Git
+│   ├── public_keys/        # chaves públicas derivadas, uma pasta por recibo, fora do Git
+│   └── logs/               # qpu_usage.csv e eal_runs.jsonl (falhas da CLI), fora do Git
+├── keys/                   # chave do emissor (.sk e .pk fora do Git)
 ├── scripts/                # geração de documentos e análises (gerar_docs_dia4.py, resilience_dia4.py, plot_bias.py, …)
 └── scratch/                # testes soltos: teste_qiskit.py, teste_ibm.py
 ```
 
-**`.gitignore` mínimo:**
+**`.gitignore` (conteúdo atual do arquivo):**
 
 ```
 .env
 .venv/
 __pycache__/
+*.pyc
+.pytest_cache/
 keys/*.sk
 data/raw/
-*.pyc
+data/results/*.png
+data/receipts/*
+!data/receipts/.gitkeep
+data/public_keys/
+data/logs/*
+!data/logs/.gitkeep
+keys/*.pk
 ```
 
 ---
@@ -673,6 +701,7 @@ Instalação: `py -3.12 -m pip install -r requirements.txt`. Sempre que instalar
 4. A QPU nunca é a única fonte de uma semente usada como chave.
 5. Fontes simuladas nunca entram em modo `keygen`.
 6. Linguagem honesta em todos os resultados (ver seção 9 do `THREAT_MODEL.md`).
+7. Recibos reais, chaves públicas derivadas, a `.pk` do emissor e os logs ficam fora do Git. Só a demo do Dia 9 publica uma cadeia de demonstração, numa pasta própria.
 
 ---
 
@@ -910,6 +939,22 @@ Medido em 2026-10-30T13:52:03.537145+00:00 (commit `d98e8bb`). Tabela: `data/res
 - O `created_at` é informado por quem emite o recibo e não é conferido (nem a ordem entre recibos).
 - O teste de integração da cadeia usa a mesma fonte determinística de teste da etapa 2 no lugar da `os`; ela não é fonte de entropia.
 - Mutações: 55 mutações manuais do `chain.py` foram todas detectadas (`scripts/mutacoes_chain.py`); isso mostra que os testes pegam esses erros, não que o módulo esteja correto.
+
+### Limitações do Dia 5 (etapa 4: linha de comando)
+
+- O `run` só aceita a fonte `os`. A coleta da IBM (Dia 6) ainda não existe, então a CLI não mistura a `os` com outra fonte.
+- Só com a `os`, um fail-closed por acaso é possível (o teste de bloco já reprovou a `os` num dos cenários do gate do Dia 4). O comando não repete sozinho; rodar de novo é decisão de quem usa.
+- A `cabeça da cadeia` é impressa pelo `run`, mas o protótipo não a guarda em lugar nenhum: o `--expected-head` só serve a quem a anotou. Sem isso, apagar o último recibo continua indetectável (limitação da etapa 3).
+- Recibos reais, chaves públicas derivadas, a `.pk` do emissor e os logs ficam fora do Git. Perder `data/receipts/` apaga a evidência, e não há cópia de segurança. A cadeia de demonstração do Dia 9 irá numa pasta própria, com uma cópia da `.pk` do emissor.
+- A `.sk` do emissor fica em hex, sem cifragem, em `keys/` (N11). O `init-issuer` não sobrescreve; não há rotação nem recuperação da chave.
+- O `--export-demo` citado na 6.10 não existe: nenhuma chave privada derivada vai a disco.
+- O `run` grava as chaves públicas derivadas, mas nenhum comando as confere depois contra os hashes do recibo.
+- O log de falhas não tem rotação nem proteção contra adulteração, e o campo `reason` pode conter caminhos de pastas do usuário.
+- As pastas padrão são relativas ao diretório atual: rodar de outra pasta cria `keys/` e `data/` ali.
+- Dois `run` ao mesmo tempo seguem sem trava (herdado da etapa 3).
+- Caracteres que o console não escreve viram `?` (o console do Windows usa ibm850), e partes da ajuda do `argparse` ficam em inglês.
+- Os testes da CLI usam a fonte determinística (SHAKE256) no lugar da `os`, com o pipeline real. A CLI com a `os` real só roda no gate manual.
+- Mutações: 58 mutações manuais do `cli.py` foram todas detectadas (`scripts/mutacoes_chain_cli.py`); isso mostra que os testes pegam esses erros, não que a CLI esteja correta. Uma delas, "não cria a pasta das chaves", era equivalente, porque o `save_issuer_key` já cria a pasta; ficou coberta por um teste que fixa o `mkdir` do comando.
 
 ## 18. Glossário
 
