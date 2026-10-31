@@ -68,11 +68,21 @@ def toeplitz_apply(blocks: np.ndarray, seed: np.ndarray, m: int) -> np.ndarray:
     return (product.astype(np.int32) & 1).astype(np.uint8)
 
 
+def _is_true(value: Any) -> bool:
+    return isinstance(value, (bool, np.bool_)) and bool(value)
+
+
+def _is_false(value: Any) -> bool:
+    return isinstance(value, (bool, np.bool_)) and not bool(value)
+
+
 def _check_seed_source(
     seed_source: SeedSource, bits: np.ndarray, seed: np.ndarray, input_hash: str
 ) -> None:
     """Recusa semente simulada, não local ou reaproveitada dos próprios bits extraídos."""
-    if not seed_source.is_local or seed_source.is_simulated:
+    # Booleano estrito, como no mixer e no construtor do recibo (achado F11): qualquer
+    # outro valor conta como o pior caso.
+    if not _is_true(seed_source.is_local) or not _is_false(seed_source.is_simulated):
         raise ValueError("semente deve vir de fonte local e não simulada")
     if hash_bits(validate_bits(seed_source.bits)) == input_hash:
         raise ValueError("semente idêntica ao lote de entrada")

@@ -650,12 +650,12 @@ def test_lista_de_fontes_vazia_da_fail_closed(tmp_path, world):
 
 @pytest.mark.parametrize("missing", [ISSUER_SK_NAME, ISSUER_PK_NAME], ids=["sem .sk", "sem .pk"])
 def test_init_issuer_recusa_com_so_uma_das_chaves(tmp_path, world, missing):
-    # Prova: basta um dos arquivos da chave existir para o init-issuer recusar (nunca recria por cima).
+    # Prova: com só um dos arquivos da chave, o init-issuer recusa, diz qual falta (F7) e não recria por cima.
     w = _clone(world, tmp_path)
     (w.keys / missing).unlink()
     before = _tree(w.keys)
     code, _, err = _call(["init-issuer", "--keys-dir", str(w.keys), "--logs-dir", str(w.logs)], _sources=[ShakeStandin()])
-    assert code == 1 and "já existe" in err and _tree(w.keys) == before
+    assert code == 1 and "incompleta" in err and f"falta {missing}" in err and _tree(w.keys) == before
 
 
 def test_init_issuer_cria_a_pasta_das_chaves_sem_depender_do_save_issuer_key(tmp_path, monkeypatch):

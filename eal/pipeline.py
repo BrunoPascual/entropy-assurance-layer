@@ -130,8 +130,11 @@ def _extract(batch: Any, report: Any, seed_source: Any) -> tuple[ExtractionResul
     h_used = extractor_entropy(report.h_declared, report.h_estimated)
     try:
         seed_batch = seed_source.read(SEED_READ_BITS)
+    except Exception as exc:  # achado F10: o texto da leitura da semente nunca é gravado
+        return None, f"extração falhou: {type(exc).__name__}"
+    try:
         return extract_toeplitz(batch.bits, h_used, seed_batch, input_batch_id=batch.batch_id), None
-    except ValueError as exc:
+    except ValueError as exc:  # mensagem escrita pelo próprio extrator: texto fixo e tamanhos
         return None, f"extração recusada: {exc}"
     except Exception as exc:
         return None, f"extração falhou: {type(exc).__name__}"

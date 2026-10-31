@@ -2,9 +2,9 @@
 
 Duas mudanças, cada uma conferida antes de gravar:
 
-1. A linha ``- **Status:** Dia 4 de 9 ...`` (ou a versão anterior do Dia 5) vira
-   a linha atual do Dia 5, com o fechamento pendente escrito. Se a linha já
-   estiver como a atual, nada muda.
+1. A linha ``- **Status:** Dia 4 de 9 ...`` (ou uma versão anterior do Dia 5)
+   vira a linha atual: Dia 5 concluído, com a revisão adversarial na seção 16.4.
+   Se a linha já estiver como a atual, nada muda.
 2. Logo depois da seção 16.3 (âncora ``dia5-gate:end``) entra uma nota com o
    fluxo real do gate. O texto é fixo e não tem números.
 
@@ -26,15 +26,17 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PROJECT_REL = Path("PROJECT.md")
 OLD_STATUS = "- **Status:** Dia 4 de 9"
 NEW_STATUS = (
-    "- **Status:** Dia 5 de 9 (gate do Dia 5 aprovado, ver seção 16.3; "
-    "fechamento do dia pendente: revisão adversarial e seção 11 do THREAT_MODEL)"
+    "- **Status:** Dia 5 de 9 (concluído; gate do Dia 5 aprovado, ver seção 16.3; "
+    "revisão adversarial na seção 16.4)"
 )
-# Texto usado na versão anterior deste script. Se o PROJECT.md ainda tiver esta
-# linha, ela é trocada pela atual.
-PREVIOUS_STATUS = (
+# Textos que este script já gravou antes. Se o PROJECT.md ainda tiver uma destas linhas,
+# ela é trocada pela atual.
+PREVIOUS_STATUSES = (
     "- **Status:** Dia 5 de 9 (gate do Dia 5 aprovado, ver seção 16.3; "
     "fechamento do dia pendente: revisão adversarial, seção 11 do THREAT_MODEL "
-    "e pendência do SOURCE.json)"
+    "e pendência do SOURCE.json)",
+    "- **Status:** Dia 5 de 9 (gate do Dia 5 aprovado, ver seção 16.3; "
+    "fechamento do dia pendente: revisão adversarial e seção 11 do THREAT_MODEL)",
 )
 GATE_END = "<!-- dia5-gate:end -->"
 NOTE_START = "<!-- dia5-nota:start -->"
@@ -89,7 +91,7 @@ def update_text(text: str) -> str:
     line = lines[idx]
     if line == NEW_STATUS:
         pass
-    elif line == PREVIOUS_STATUS or line.startswith(OLD_STATUS):
+    elif line in PREVIOUS_STATUSES or line.startswith(OLD_STATUS):
         lines[idx] = NEW_STATUS
     else:
         raise GateError("a linha de Status não é a do Dia 4 nem a do Dia 5")

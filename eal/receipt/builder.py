@@ -18,6 +18,7 @@ from __future__ import annotations
 import hashlib
 import math
 import platform
+import re
 import uuid
 from collections.abc import Sequence
 from datetime import datetime, timezone
@@ -41,6 +42,41 @@ from eal.pqc.keygen import DerivedKeys, derive_keys_from_mix
 from eal.receipt.schema import KEYGEN_MODE, MIXED_STATUS, validate_body
 
 SOFTWARE_PACKAGES = ("kyber-py", "dilithium-py", "numpy", "scipy")
+
+# --- Achado F9 (revisão adversarial do Dia 5, parte 2) -------------------------------
+# Campos permitidos nos objetos ANINHADOS que este construtor emite. O validador do
+# esquema só olha o topo do recibo; sem esta lista, um campo novo em HealthReport (que usa
+# dataclasses.asdict e serializa todos os campos) iria para o recibo assinado sem alarme.
+# Vale só para recibos NOVOS: a verificação (schema.py, verify.py) não muda. Um campo novo
+# numa dessas classes precisa entrar aqui de propósito; os testes travam as listas.
+SOURCE_ENTRY_KEYS = frozenset({
+    "source_id", "source_type", "source_version", "status", "batch_id", "batch_hash",
+    "is_local", "is_simulated", "approved", "reasons", "health", "extraction"
+})
+HEALTH_KEYS = frozenset({  # os 35 campos de eal.health.report.HealthReport
+    "schema", "batch_id", "source_id", "n_bits", "h_declared", "rct_pass", "rct_cutoff",
+    "rct_max_run", "rct_max_run_start", "rct_alpha_neg_log2", "apt_pass", "apt_inconclusive",
+    "apt_cutoff", "apt_max_count", "apt_n_windows", "apt_n_failed_windows",
+    "apt_discarded_bits", "apt_alpha_neg_log2", "replay_pass", "replay_history_batches",
+    "replay_n_blocks", "replay_repeated_blocks", "replay_batch_repeated", "h_bit", "h_byte",
+    "h_estimated", "h_limited_by", "h_threshold", "h_health_pass", "stats", "stats_pass",
+    "stats_inconclusive", "approved", "reasons", "notes"
+})
+EXTRACTION_KEYS = frozenset({  # ExtractionResult.to_dict()
+    "extractor_type", "guarantee", "n", "m", "h_used", "epsilon_log2", "epsilon_total_log2",
+    "n_input_bits", "n_blocks", "n_output_bits", "discarded_bits", "seed_hash", "input_hash",
+    "notes"
+})
+MIXER_KEYS = frozenset({  # MixResult.to_dict()
+    "mode", "usable_for_key", "mixer_type", "domain", "policy", "seed_hash", "included",
+    "excluded"
+})
+MIXER_INCLUDED_KEYS = frozenset({"source_id", "batch_id", "input_hash", "is_local", "is_simulated", "n_bits_mixed"})
+MIXER_EXCLUDED_KEYS = frozenset({"source_id", "batch_id", "reasons"})
+EXTRACTOR_KEYS = frozenset({"type", "n", "epsilon_log2"})
+_HEX_ONLY = re.compile(r"[0-9a-fA-F]+")
+_MAX_HEX_CHARS = 127  # hash SHA3-256 tem 64 caracteres; 128 ou mais é tamanho de semente de 64 bytes
+_MAX_BIT_LIST = 63    # o recibo não tem listas de números; 64 ou mais zeros e uns parecem bits
 
 
 def to_native(value: Any) -> Any:
@@ -155,6 +191,52 @@ def _source_entry(outcome: Any, src: Any, mi: Any) -> dict[str, Any]:
     return entry
 
 
+def _extra_keys(obj: Any, allowed: frozenset[str], where: str) -> None:
+    """Recusa campo fora da lista. A mensagem cita só o NOME do campo, nunca o valor."""
+    if isinstance(obj, dict):
+        extra = obj.keys() - allowed
+        if extra:
+            raise ValueError(f"campos não previstos em {where}: {sorted(map(str, extra))}")
+
+
+def _scan_material(value: Any, where: str) -> None:
+    """Recusa bytes, texto hexadecimal longo e lista longa de bits em qualquer campo permitido."""
+    if isinstance(value, (bytes, bytearray)):
+        raise TypeError(f"bytes no recibo em {where}")
+    if isinstance(value, str):
+        if len(value) > _MAX_HEX_CHARS and _HEX_ONLY.fullmatch(value):
+            raise ValueError(f"texto hexadecimal longo no recibo em {where}")
+    elif isinstance(value, dict):
+        for key, item in value.items():
+            _scan_material(item, f"{where}.{key}")
+    elif isinstance(value, (list, tuple)):
+        if len(value) > _MAX_BIT_LIST and all(type(x) is int and x in (0, 1) for x in value):
+            raise ValueError(f"lista longa de bits no recibo em {where}")
+        for i, item in enumerate(value):
+            _scan_material(item, f"{where}[{i}]")
+
+
+def check_nested_fields(body: dict[str, Any]) -> None:
+    """Achado F9: o construtor só emite os campos previstos nos objetos aninhados."""
+    _extra_keys(body.get("extractor"), EXTRACTOR_KEYS, "extractor")
+    mixer = body.get("mixer")
+    _extra_keys(mixer, MIXER_KEYS, "mixer")
+    if isinstance(mixer, dict):
+        for name, allowed in (("included", MIXER_INCLUDED_KEYS), ("excluded", MIXER_EXCLUDED_KEYS)):
+            items = mixer.get(name)
+            if isinstance(items, list):
+                for i, item in enumerate(items):
+                    _extra_keys(item, allowed, f"mixer.{name}[{i}]")
+    sources = body.get("sources")
+    if isinstance(sources, list):
+        for i, entry in enumerate(sources):
+            _extra_keys(entry, SOURCE_ENTRY_KEYS, f"sources[{i}]")
+            if isinstance(entry, dict):
+                _extra_keys(entry.get("health"), HEALTH_KEYS, f"sources[{i}].health")
+                _extra_keys(entry.get("extraction"), EXTRACTION_KEYS, f"sources[{i}].extraction")
+    _scan_material(body, "recibo")
+
+
 def build_receipt_body(
     result: Any,
     keys: DerivedKeys,
@@ -194,6 +276,7 @@ def build_receipt_body(
         "keys": key_hashes,
         "limitations": list(RECEIPT_REQUIRED_LIMITATIONS),
     }
+    check_nested_fields(body)
     problems = validate_body(body)
     if problems:
         raise ValueError("recibo inválido: " + "; ".join(problems))

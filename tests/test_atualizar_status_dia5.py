@@ -58,12 +58,24 @@ def test_status_ja_novo_nao_muda_a_linha():
     assert upd.update_text(text).split("\n").count(upd.NEW_STATUS) == 1
 
 
-def test_status_da_versao_anterior_do_dia5_e_trocado():
-    text = BASE.replace(upd.OLD_STATUS + " (concluído; gate do Dia 4 aprovado, ver seção 16.2)",
-                        upd.PREVIOUS_STATUS)
+@pytest.mark.parametrize("previous", upd.PREVIOUS_STATUSES)
+def test_status_de_versao_anterior_do_dia5_e_trocado(previous):
+    text = BASE.replace(upd.OLD_STATUS + " (concluído; gate do Dia 4 aprovado, ver seção 16.2)", previous)
     out = upd.update_text(text).split("\n")
     assert upd.NEW_STATUS in out
-    assert upd.PREVIOUS_STATUS not in out
+    assert previous not in out
+
+
+def test_as_duas_redacoes_anteriores_sao_diferentes_da_atual():
+    assert len(set(upd.PREVIOUS_STATUSES)) == 2
+    assert upd.NEW_STATUS not in upd.PREVIOUS_STATUSES
+
+
+def test_status_atual_diz_concluido_e_aponta_a_secao_da_revisao():
+    assert "concluído" in upd.NEW_STATUS
+    assert "seção 16.4" in upd.NEW_STATUS
+    assert "seção 16.3" in upd.NEW_STATUS
+    assert "pendente" not in upd.NEW_STATUS
 
 
 def test_status_atual_nao_cita_mais_o_source():

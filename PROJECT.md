@@ -3,7 +3,7 @@
 - **Versão do documento:** 1.0
 - **Data:** 27/10/2026
 - **Autor:** Bruno Pascual
-- **Status:** Dia 5 de 9 (gate do Dia 5 aprovado, ver seção 16.3; fechamento do dia pendente: revisão adversarial e seção 11 do THREAT_MODEL)
+- **Status:** Dia 5 de 9 (concluído; gate do Dia 5 aprovado, ver seção 16.3; revisão adversarial na seção 16.4)
 - **Documento irmão:** `THREAT_MODEL.md` (modelo de ameaça)
 
 > Este arquivo é a fonte de verdade do projeto. Cole-o no início de cada sessão com a IA.
@@ -899,9 +899,13 @@ As chaves privadas derivadas ficam só em memória (AT2 do THREAT_MODEL). A exce
 <!-- dia5-revisao:start -->
 ### 16.4 Revisão adversarial do Dia 5
 
-Feita por leitura do código, em partes, a partir do arquivo que o coletor gera (`revisao_adversarial_parteN_*.txt`), com o commit lido e o SHA-256 de cada arquivo. O que foi confirmado por execução está dito em cada achado; o resto é leitura e não prova ausência de defeitos.
+Feita por leitura do código, em partes, a partir do arquivo que o coletor gera (`revisao_parteN_*.txt`), com o commit lido e o SHA-256 de cada arquivo. O que foi confirmado por execução está dito em cada achado; o resto é leitura e não prova ausência de defeitos.
 
 **Parte 1 (31/10/2026), commit `90d15b8`.** `eal/cli.py` (SHA-256 `0ADAC6167E0A570F56BA1D0C4A220AFB6F2A96F1BEBFFD9F564FBC076040DFA5`); `eal/receipt/chain.py` (SHA-256 `779BE0DA09A47EAC1F39AF65A7F9C89977FE67669D7FA7409DDBC1132D2685FE`); `eal/receipt/verify.py` (SHA-256 `371DD71FFA5B99078EB044008AFE7AB0D997FF070763D3D9C0956DAF5F598733`).
+
+**Parte 2 (31/10/2026), commit `20e7055`.** `eal/pqc/keygen.py` (SHA-256 `005C589DF037D54ACE97863BCA3B4CE5EAFE5723896D2BCE31A82B50AD6B4F81`); `eal/receipt/builder.py` (SHA-256 `313F49039BD338A7C0635FE3FF3C274945982CC8367FB04B16F0C9A47A31E7EA`); `eal/receipt/sign.py` (SHA-256 `496646F61566563C5F1DE6F3F715B6ACCF035D3E658E55C6CA111D71D923A3FB`); `eal/receipt/schema.py` (SHA-256 `731FCC7D8B52F54C8B603E51D21FFB722990B4C05939B1BA44B724AA9AE87AC3`).
+
+**Parte 3 (31/10/2026), commit `20e7055`.** `eal/mix/mixer.py` (SHA-256 `4B0D47C93C2F41152BCE47C834E01F085D7635214DA98CA7AE7B293A1B929807`); `eal/pipeline.py` (SHA-256 `5B6D4DFD862D81B390ACA90A41521ABC82057C7465D23A260A8F230628296A80`); `eal/config.py` (SHA-256 `98DB40E62374FB4A6458C730CCFDC97C4D453B2353C57DE98C9082D06093BD74`); `eal/health/report.py` (SHA-256 `FCAD8168F5AF5C34443C4CE4475EF44D31AAA53651DC5210BC69A1BDE12F8095`); `eal/extract/toeplitz.py` (SHA-256 `6930DFACEE5F36C3395CF849E6A22EA6044F4E0CC48B4C9E8B2F85AFA317D9AC`); `eal/extract/budget.py` (SHA-256 `AB3EE27C0E810A593381985BB344B70ED10F4B95BCAE445B5ADDF62F28FD4765`); `eal/extract/blocks.py` (SHA-256 `CF19EF4E795026914019626FC414AE75E0FCBCB3F0CD96170676E54AD04C64FA`); `eal/extract/sha3.py` (SHA-256 `1DD58535A853B1E2816E097F2E088D9186DADF83AD4F963611FD7125DEF416EC`).
 
 | ID | Gravidade | Onde | Achado | Decisão |
 | --- | --- | --- | --- | --- |
@@ -911,8 +915,16 @@ Feita por leitura do código, em partes, a partir do arquivo que o coletor gera 
 | F4 | Baixa (latente) | `cli.py`, `run` | `--sources` era validado e nunca lido. | Corrigido: a lista que valida o argumento é a mesma que cria as fontes (`_SOURCE_FACTORIES`). Testes no mesmo arquivo de F1. |
 | F5 | Informativa | `verify.py`, `verify_receipt_text` | O motivo "JSON inválido" inclui o texto do erro do parser de JSON. | Aceito sem mudança: o texto traz só a posição e mensagens fixas, nunca conteúdo do recibo, e ajuda a diagnosticar. |
 | F6 | Informativa | `cli.py` e `chain.py` | O `run` verifica a cadeia inteira duas vezes (uma verificação ML-DSA por linha). | A medir quando a cadeia crescer. A primeira passada é a que evita gastar entropia com log ruim. |
+| F7 | Baixa (disponibilidade) | `sign.py`, `cli.py` | A `.pk` é gravada antes da `.sk`; se a segunda falhar, `init-issuer` recusa ("já existe") e `run` manda rodar `init-issuer`: um beco sem saída. Confirmado por execução no `sign.py`; o efeito na CLI é pela leitura. | Corrigido: `init-issuer` e `run` detectam o par incompleto e dizem qual arquivo falta e o que fazer. |
+| F8 | Baixa (mensagem) | `schema.py`, `chain.py`, `cli.py` | `--expected-head` em maiúsculas (como o `Get-FileHash` imprime) era recusado como cabeça diferente. Confirmado por execução. | Corrigido: o argumento é normalizado para minúsculas e sem espaços; a comparação continua exata. |
+| F9 | Baixa (endurecimento) | `schema.py`, `report.py`, `builder.py` | O validador não olha dentro de `mixer`, `sources[i]` etc., e `HealthReport.to_dict()` usa `asdict`: um campo novo iria para o recibo assinado sem alarme. Hoje nenhum desses objetos leva material secreto. Confirmado por execução: a aceitação de campo extra; o resto é leitura. | Corrigido no construtor: lista fechada de campos nos objetos aninhados, recusa de texto hexadecimal longo e de lista longa de bits, e testes que travam os 35 campos do `HealthReport`. A verificação não mudou: recibos antigos continuam válidos. |
+| F10 | Informativa | `pipeline.py` | O `except ValueError` gravava o texto de qualquer `ValueError` do `try`, inclusive o da leitura da semente. | Corrigido: a leitura da semente tem `try` próprio, e só a mensagem do extrator (texto fixo e tamanhos) é gravada. |
+| F11 | Baixa (latente) | `toeplitz.py` | A checagem da semente usava veracidade: `is_simulated=None`, `''` ou `0` e `is_local='não'` passavam. Confirmado por execução. | Corrigido: booleano estrito, como no mixer e no construtor do recibo. |
+| F12 | Média para o Dia 6, baixa hoje | `pipeline.py`, `report.py` | O detector de replay é criado a cada `eal run`: replay entre execuções não é detectado. Já estava na seção 17; o THREAT_MODEL (T3) dizia "baixo para replay exato". | Documentado: T3 do THREAT_MODEL v1.2 e N14. A persistência do histórico não foi implementada. |
 
-**Pendente para as partes 2 e 3:** se `save_issuer_key` grava em modo exclusivo (o `init-issuer` confere a existência da chave antes de rodar o pipeline); se `is_hex64` aceita só minúsculas; o que `PipelineResult.to_dict()` leva ao log de falhas; o mínimo aceito em `--bits`; e se `validate_body` recusa campos a mais no corpo assinado.
+**Resolvido sem mudança de código:** `save_issuer_key` grava em modo exclusivo; os quatro prefixos de domínio da semente (`EAL-v1|ML-KEM-768|`, `EAL-v1|ML-DSA-65|`, `EAL-v1|issuer|ML-DSA-65|` e `EAL-v1-mix`) são distintos e nenhum é prefixo de outro (executado); `PipelineResult.to_dict()` e `MixResult.to_dict()` são listas fixas de campos; um `--bits` abaixo de 1.000.000 não aprova a fonte, porque o teste estatístico fica inconclusivo (leitura).
+
+**Pendência para o Dia 6, vinda da revisão:** persistir o histórico do detector de replay entre execuções antes de usar a fonte da IBM (F12). Hoje cada `eal run` começa com o histórico vazio.
 <!-- dia5-revisao:end -->
 
 ## 17. Limitações conhecidas

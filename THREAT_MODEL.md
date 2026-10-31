@@ -1,7 +1,7 @@
 # Entropy Assurance Layer (EAL) — Modelo de ameaça
 
-- **Versão do documento:** 1.1
-- **Data:** 27/10/2026 (v1.0); revisada em 31/10/2026 (v1.1)
+- **Versão do documento:** 1.2
+- **Data:** 27/10/2026 (v1.0); revisada em 31/10/2026 (v1.1 e v1.2)
 - **Autor:** Bruno Pascual
 - **Documento irmão:** `PROJECT.md`
 
@@ -80,7 +80,7 @@ Bibliotecas de terceiros (qiskit, numpy, scipy, PQC em Python puro): confiadas, 
 | --- | --- | --- | --- | --- | --- |
 | T1 | Viés ou correlação na fonte | ADV1 | APT, estimador MCV por bit e por byte, extrator dimensionado pela entropia estimada | E1, E2, testes unitários | Baixo para viés grosseiro; médio para correlações sutis |
 | T2 | Bits travados | ADV1 | RCT | E2, testes com sequência conhecida | Baixo |
-| T3 | Replay de lote ou de bloco | ADV3 | Hash de cada lote e de blocos de 4096 bits; reprova repetição | E2 | Baixo para replay exato; alto para replay transformado |
+| T3 | Replay de lote ou de bloco | ADV3 | Hash de cada lote e de blocos de 4096 bits; reprova repetição dentro de uma execução (o histórico do detector não é guardado entre execuções do `eal run`) | E2 | Baixo para replay exato dentro de uma execução; **não detectado entre execuções**; alto para replay transformado |
 | T4 | Gerador clássico disfarçado de QPU | ADV3 | Não detectável por testes de saída. Mitigação estrutural: fonte local obrigatória na mistura; CHSH como verificação de sanidade | E2, E5 | **Alto**, declarado como limitação |
 | T5 | Provedor conhece os bits | ADV2 | Política: ≥ 1 fonte local aprovada e não simulada em toda semente | Teste de política no mixer | Baixo, se o host for íntegro |
 | T6 | Fonte adaptativa cancela a mistura | ADV6 | Combinação por SHA3-512 com separação de domínio (não XOR) | E4 | Baixo, sob a premissa P2 |
@@ -131,6 +131,7 @@ Cada garantia vale **somente** sob as premissas da seção 8.
 | N11 | Proteção da chave do emissor em disco | Arquivo local sem HSM nem cifragem |
 | N12 | Resistência a ataques físicos ou de canal lateral | Fora do escopo do protótipo |
 | N13 | Detectar a remoção dos últimos recibos da cadeia sem uma cabeça guardada fora do log | Um log sem o fim continua sendo uma cadeia válida; o protótipo imprime a cabeça no `run`, mas não a guarda |
+| N14 | Detectar replay de lote entre execuções do `eal run` | O detector de replay guarda o histórico só em memória e começa vazio a cada execução; isso importa a partir da fonte da IBM (Dia 6), porque um lote antigo devolvido numa execução seguinte não seria visto |
 
 ---
 
@@ -198,3 +199,13 @@ Se uma premissa cair, as garantias que dependem dela caem junto, e isso deve ser
 
 **O que não mudou.** Adversários, premissas, G1 a G3, G5 a G8 e as demais não garantias. Nenhum resultado do Dia 5 os contradisse. O código da CLI e da cadeia ainda não passou pela revisão adversarial do fechamento do Dia 5, e esta revisão do modelo não o cobre.
 <!-- revisao-v11:end -->
+
+<!-- revisao-v12:start -->
+### v1.2 (31/10/2026)
+
+**Motivo.** A revisão adversarial do código (partes 2 e 3) mostrou que o detector de replay guarda o histórico só em memória e começa vazio a cada `eal run` (já registrado no PROJECT.md, seção 17, limitações do Dia 3). O T3 da v1.1 dizia "baixo para replay exato", o que só vale dentro de uma execução.
+
+**O que mudou.** T3 com a mitigação e o risco residual separados; N14 criada; versão e data no cabeçalho.
+
+**O que não mudou.** Adversários, premissas e as demais garantias e não garantias. A persistência do histórico do detector não foi implementada: é pendência antes da fonte da IBM (Dia 6).
+<!-- revisao-v12:end -->

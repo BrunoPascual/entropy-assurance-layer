@@ -67,15 +67,30 @@ def test_bloco_entra_logo_depois_da_nota_e_antes_da_secao_17():
 def test_bloco_tem_titulo_commit_e_hashes_dos_arquivos_lidos():
     block = reg.render_block()
     assert "### 16.4 Revisão adversarial do Dia 5" in block
-    assert "commit `90d15b8`" in block
-    for path, sha in reg.PART1_FILES:
-        assert f"`{path}` (SHA-256 `{sha}`)" in block
+    for label, commit, files in reg.PARTS:
+        assert f"**{label} (31/10/2026), commit `{commit}`.**" in block
+        for path, sha in files:
+            assert f"`{path}` (SHA-256 `{sha}`)" in block
+
+
+def test_partes_e_arquivos_lidos():
+    assert [label for label, _, _ in reg.PARTS] == ["Parte 1", "Parte 2", "Parte 3"]
+    assert [len(files) for _, _, files in reg.PARTS] == [3, 4, 8]
+    assert [commit for _, commit, _ in reg.PARTS] == ["90d15b8", "20e7055", "20e7055"]
+
+
+def test_todo_hash_e_sha256_em_maiusculas_e_nao_se_repete():
+    hashes = [sha for _, _, files in reg.PARTS for _, sha in files]
+    assert all(len(h) == 64 and h == h.upper() and set(h) <= set("0123456789ABCDEF") for h in hashes)
+    assert len(hashes) == len(set(hashes))
+    paths = [p for _, _, files in reg.PARTS for p, _ in files]
+    assert len(paths) == len(set(paths))
 
 
 def test_tabela_tem_uma_linha_por_achado_com_cinco_colunas():
     lines = reg.render_block().split("\n")
     rows = [line for line in lines if line.startswith("| F")]
-    assert [r.split("|")[1].strip() for r in rows] == ["F1", "F2", "F3", "F4", "F5", "F6"]
+    assert [r.split("|")[1].strip() for r in rows] == [f"F{n}" for n in range(1, 13)]
     header = next(line for line in lines if line.startswith("| ID |"))
     for row in rows:
         assert row.count("|") - row.count("\\|") == header.count("|")
@@ -83,34 +98,59 @@ def test_tabela_tem_uma_linha_por_achado_com_cinco_colunas():
 
 def test_decisoes_registradas_para_cada_achado():
     rows = {r.split("|")[1].strip(): r for r in reg.render_block().split("\n") if r.startswith("| F")}
-    assert "Corrigido" in rows["F1"] and "Corrigido" in rows["F4"]
+    for fixed in ("F1", "F4", "F7", "F8", "F9", "F10", "F11"):
+        assert "Corrigido" in rows[fixed], fixed
     assert "Já estava documentado" in rows["F2"] and "Já estava documentado" in rows["F3"]
     assert "Aceito sem mudança" in rows["F5"]
     assert "A medir" in rows["F6"]
+    assert "Documentado" in rows["F12"] and "não foi implementada" in rows["F12"]
 
 
 def test_achados_confirmados_por_execucao_estao_marcados():
     rows = {r.split("|")[1].strip(): r for r in reg.render_block().split("\n") if r.startswith("| F")}
-    assert "Confirmado por execução" in rows["F1"]
-    assert "Confirmado por execução" in rows["F2"]
-    for other in ("F3", "F4", "F5", "F6"):
-        assert "Confirmado por execução" not in rows[other]
+    for executed in ("F1", "F2", "F7", "F8", "F9", "F11"):
+        assert "Confirmado por execução" in rows[executed], executed
+    for read_only in ("F3", "F4", "F5", "F6", "F10", "F12"):
+        assert "Confirmado por execução" not in rows[read_only], read_only
 
 
 def test_bloco_diz_que_leitura_nao_prova_ausencia_de_defeitos():
     assert "não prova ausência de defeitos" in reg.render_block()
 
 
-def test_bloco_lista_os_pendentes_das_partes_2_e_3():
+def test_bloco_registra_o_que_foi_resolvido_sem_mudar_codigo():
     block = reg.render_block()
-    for word in ("save_issuer_key", "is_hex64", "to_dict()", "--bits", "validate_body"):
+    assert "**Resolvido sem mudança de código:**" in block
+    for word in ("save_issuer_key", "EAL-v1|issuer|ML-DSA-65|", "PipelineResult.to_dict()", "1.000.000"):
         assert word in block
+
+
+def test_bloco_nao_deixa_mais_pendentes_das_partes_2_e_3():
+    assert "Pendente para as partes 2 e 3" not in reg.render_block()
+
+
+def test_bloco_registra_a_pendencia_do_dia_6():
+    block = reg.render_block()
+    assert "**Pendência para o Dia 6, vinda da revisão:**" in block
+    assert "IBM" in block and "histórico do detector de replay" in block
+
+
+def test_f9_cita_que_a_verificacao_nao_mudou():
+    rows = {r.split("|")[1].strip(): r for r in reg.render_block().split("\n") if r.startswith("| F")}
+    assert "recibos antigos continuam válidos" in rows["F9"]
+    assert "35 campos" in rows["F9"]
 
 
 def test_bloco_nao_usa_palavras_proibidas():
     lowered = reg.render_block().lower()
     for forbidden in ("certificad", "100%", "inquebr", "pronto para produção", "provado"):
         assert forbidden not in lowered
+
+
+def test_nenhuma_linha_da_tabela_tem_barra_vertical_solta():
+    header = next(line for line in reg.render_block().split("\n") if line.startswith("| ID |"))
+    for row in (r for r in reg.render_block().split("\n") if r.startswith("| F")):
+        assert row.count("|") - row.count("\\|") == header.count("|")
 
 
 def test_celula_com_barra_vertical_e_escapada():

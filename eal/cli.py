@@ -108,6 +108,12 @@ def _bits_arg(value: str) -> int:
     return bits
 
 
+def _head_arg(value: str) -> str:
+    """Cabeça esperada em minúsculas e sem espaços nas pontas (achado F8: o Get-FileHash
+    imprime em maiúsculas). A comparação com a cabeça real continua exata."""
+    return value.strip().lower()
+
+
 def _sources_arg(value: str) -> str:
     names = [n.strip() for n in value.split(",") if n.strip()]
     if len(names) == 1 and names[0] in _SOURCE_FACTORIES:
@@ -146,7 +152,8 @@ def _build_parser() -> argparse.ArgumentParser:
     # antes, --sem-cadeia fazia a cabeça informada ser ignorada em silêncio.
     exclusive = ver.add_mutually_exclusive_group()
     exclusive.add_argument("--sem-cadeia", action="store_true", help="não confere a cadeia (avisa na saída)")
-    exclusive.add_argument("--expected-head", default=None, help="hash da cabeça da cadeia guardado fora do log")
+    exclusive.add_argument("--expected-head", type=_head_arg, default=None,
+                           help="hash da cabeça da cadeia guardado fora do log")
     return parser
 
 
@@ -172,10 +179,21 @@ def _run_keygen(sources: Sequence[Any] | None, seed_source: Any, n_bits: int) ->
 
 # ---------------------------------------------------------------- init-issuer
 
+def _incomplete_issuer_message(sk_exists: bool) -> str:
+    """Chave do emissor pela metade (achado F7): diz qual arquivo falta e o que fazer."""
+    present, missing = (ISSUER_SK_NAME, ISSUER_PK_NAME) if sk_exists else (ISSUER_PK_NAME, ISSUER_SK_NAME)
+    return (f"chave do emissor incompleta: falta {missing} (existe só {present}). "
+            "Se ainda não há recibos assinados com ela, apague o arquivo que sobrou e rode "
+            "'py -3.12 -m eal init-issuer'. Se já há recibos, restaure o arquivo que falta: "
+            "eles só se verificam com o par.")
+
+
 def _cmd_init_issuer(args: argparse.Namespace, sources: Any, seed_source: Any) -> int:
     sk, pk = args.keys_dir / ISSUER_SK_NAME, args.keys_dir / ISSUER_PK_NAME
-    if sk.exists() or pk.exists():
+    if sk.exists() and pk.exists():
         raise _Fail("issuer_key", "a chave do emissor já existe; não vou sobrescrever")
+    if sk.exists() or pk.exists():
+        raise _Fail("issuer_key", _incomplete_issuer_message(sk.exists()))
     result, _ = _run_keygen(sources, seed_source, args.bits)
     key = issuer_key_from_seed(issuer_seed_from_mix(result.mix))
     args.keys_dir.mkdir(parents=True, exist_ok=True)
@@ -191,6 +209,8 @@ def _cmd_init_issuer(args: argparse.Namespace, sources: Any, seed_source: Any) -
 
 def _load_issuer(keys_dir: Path) -> Any:
     sk, pk = keys_dir / ISSUER_SK_NAME, keys_dir / ISSUER_PK_NAME
+    if sk.exists() != pk.exists():
+        raise _Fail("issuer_key", _incomplete_issuer_message(sk.exists()))
     if not (sk.exists() and pk.exists()):
         raise _Fail("issuer_key", "chave do emissor não encontrada; rode 'py -3.12 -m eal init-issuer'")
     try:
