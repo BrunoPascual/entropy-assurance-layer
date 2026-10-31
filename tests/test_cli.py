@@ -19,6 +19,7 @@ from __future__ import annotations
 import contextlib
 import hashlib
 import io
+import itertools
 import json
 import os
 import re
@@ -46,6 +47,7 @@ MARK = "SEGREDO-123"
 OTHER_XI = bytes(range(200, 232))
 H = "ab" * 32
 STANDIN_LABEL = b"EAL-v1|test-standin|1"
+_READS = itertools.count(1)  # F12: cada leitura do ShakeStandin gira os bits por mais 1 posição
 
 
 # ---------------------------------------------------------------- fontes de teste
@@ -62,6 +64,10 @@ class ShakeStandin(Source):
         n_bits = self.validate_n_bits(n_bits)
         raw = hashlib.shake_256(STANDIN_LABEL).digest((n_bits + 7) // 8)
         bits = np.unpackbits(np.frombuffer(raw, dtype=np.uint8))[:n_bits].copy()
+        # F12: com o histórico de replay guardado entre execuções, cada leitura precisa de bits novos.
+        # Girar a sequência conhecida por mais 1 posição a cada leitura dá bits novos (os blocos de
+        # 4096 bits mudam; replay deslocado não é detectado, ver replay.py) com as mesmas propriedades.
+        bits = np.roll(bits, next(_READS)).copy()
         return self._build_batch(bits, {"label": STANDIN_LABEL.decode()})
 
 

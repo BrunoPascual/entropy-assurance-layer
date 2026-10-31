@@ -19,7 +19,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from eal.config import DEFAULT_N_BITS, GENESIS_PREV_HASH, ISSUER_PK_NAME, ISSUER_SK_NAME, RECEIPT_CHAIN_NAME
+from eal.config import (
+    DEFAULT_N_BITS,
+    GENESIS_PREV_HASH,
+    ISSUER_PK_NAME,
+    ISSUER_SK_NAME,
+    RECEIPT_CHAIN_NAME,
+    REPLAY_HISTORY_NAME,
+)
+from eal.health.replay_store import ReplayHistoryError, load_detector, save_detector
 from eal.pipeline import run_pipeline
 from eal.pqc.keygen import derive_keys_from_mix
 from eal.receipt.builder import build_receipt_body, issuer_seed_from_mix
@@ -163,11 +171,38 @@ def _outcome_lines(result: Any) -> list[str]:
     return [f"  fonte {getattr(o, 'source_id', '?')}: {getattr(o, 'status', '?')}" for o in result.outcomes]
 
 
-def _run_keygen(sources: Sequence[Any] | None, seed_source: Any, n_bits: int) -> tuple[Any, list[Any]]:
+def _load_history(path: Path) -> Any:
+    """Histórico do detector de replay (F12). Ruim: recusa antes de ler qualquer fonte, sem apagar nada."""
+    try:
+        return load_detector(path)
+    except ReplayHistoryError as exc:
+        raise _Fail(
+            "replay_history",
+            f"{exc}; nenhuma fonte foi lida (fail-closed). Se o arquivo for mesmo inútil, arquive-o à mão: "
+            "isso zera a proteção contra replay entre execuções.",
+        ) from None
+
+
+def _save_history(detector: Any, path: Path) -> None:
+    """Grava o histórico ANTES de qualquer recibo. Se falhar, nenhum recibo é emitido (fail-closed)."""
+    try:
+        save_detector(detector, path)
+    except ReplayHistoryError as exc:
+        raise _Fail("replay_history", f"{exc}; nenhum recibo foi emitido (fail-closed)") from None
+
+
+def _run_keygen(
+    sources: Sequence[Any] | None, seed_source: Any, n_bits: int, logs_dir: Path
+) -> tuple[Any, list[Any]]:
     """Roda o pipeline em modo keygen UMA vez. Sem semente: fail-closed (nunca repete sozinho)."""
     srcs = list(sources) if sources is not None else [OsSource()]
     seed = seed_source if seed_source is not None else OsSource()
-    result = run_pipeline(srcs, seed, mode="keygen", n_bits=n_bits)
+    history_path = logs_dir / REPLAY_HISTORY_NAME
+    detector = _load_history(history_path)  # antes de ler fonte: histórico ruim não gasta entropia
+    seen_before = detector.history_batches
+    result = run_pipeline(srcs, seed, mode="keygen", n_bits=n_bits, detector=detector)
+    if detector.history_batches != seen_before:  # lote novo visto: grava mesmo se a semente falhou
+        _save_history(detector, history_path)
     if result.mix is None:
         ids = ", ".join(str(getattr(s, "source_id", "?")) for s in srcs)
         lines = ["nenhuma semente foi gerada (fail-closed)", f"  fontes consultadas: {ids}",
@@ -194,7 +229,7 @@ def _cmd_init_issuer(args: argparse.Namespace, sources: Any, seed_source: Any) -
         raise _Fail("issuer_key", "a chave do emissor já existe; não vou sobrescrever")
     if sk.exists() or pk.exists():
         raise _Fail("issuer_key", _incomplete_issuer_message(sk.exists()))
-    result, _ = _run_keygen(sources, seed_source, args.bits)
+    result, _ = _run_keygen(sources, seed_source, args.bits, args.logs_dir)
     key = issuer_key_from_seed(issuer_seed_from_mix(result.mix))
     args.keys_dir.mkdir(parents=True, exist_ok=True)
     save_issuer_key(key, args.keys_dir)
@@ -242,7 +277,7 @@ def _cmd_run(args: argparse.Namespace, sources: Any, seed_source: Any) -> int:
     issuer = _load_issuer(args.keys_dir)
     head = _current_head(args.receipts_dir, issuer.pk)  # antes do pipeline: log ruim não gasta entropia
     chosen = sources if sources is not None else _SOURCE_FACTORIES[args.sources]()
-    result, srcs = _run_keygen(chosen, seed_source, args.bits)
+    result, srcs = _run_keygen(chosen, seed_source, args.bits, args.logs_dir)
     keys = derive_keys_from_mix(result.mix)
     body = build_receipt_body(result, keys, srcs, prev_receipt_hash=head)
     receipt = sign_receipt(body, issuer)

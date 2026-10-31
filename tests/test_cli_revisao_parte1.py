@@ -125,7 +125,7 @@ def run_stubs(monkeypatch):
     """Para o run logo depois de escolher as fontes, sem pipeline real."""
     seen: dict = {"factory_calls": 0}
 
-    def fake_keygen(sources, seed_source, n_bits):
+    def fake_keygen(sources, seed_source, n_bits, logs_dir=None):  # F12: _run_keygen recebe logs_dir
         seen["sources"] = sources
         raise cli._Fail("pipeline", "parado pelo teste")
 
