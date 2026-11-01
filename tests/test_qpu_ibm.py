@@ -821,3 +821,67 @@ def test_nome_do_status_aceita_enum_e_texto():
         name = "DONE"
     assert qpu_ibm._status_name(SimpleNamespace(status=lambda: Enumish())) == "DONE"
     assert qpu_ibm._status_name(SimpleNamespace(status=lambda: "RUNNING")) == "RUNNING"
+
+
+# --- R8-INTEGRACAO: retrato da calibração em vigor na execução ---
+RUN_DATE_R8 = "2026-11-01 11:57:51-03:00"
+
+
+class RunPropsR8:
+    """Falso ``job.properties()``: calibração da execução, com defeitos opcionais."""
+
+    last_update_date = RUN_DATE_R8
+
+    def __init__(self, bad=None) -> None:
+        self.bad = bad
+
+    def readout_error(self, q: int) -> float:
+        if self.bad == "raise":
+            raise RuntimeError("sem leitura")
+        if self.bad == "range":
+            return 1.5
+        return 0.02 + 0.001 * q
+
+
+def _job_com_properties_r8(monkeypatch, props) -> None:
+    def properties(self):
+        if isinstance(props, Exception):
+            raise props
+        return props
+    monkeypatch.setattr(FakeJob, "properties", properties, raising=False)
+
+
+def test_r8_lote_grava_o_retrato_da_execucao_separado_do_envio(h, monkeypatch):
+    h.rows = np.array([[1, 0, 1], [0, 1, 1]], dtype=bool)
+    _job_com_properties_r8(monkeypatch, RunPropsR8())
+    result, _ = h.send(shots=2, qubits=[4, 1, 3])
+    out = h.collector.retrieve(result.job_id)
+    batch = load_batch(h.raw_dir / out.output_file)
+    assert batch.params["calibration_date_run"] == RUN_DATE_R8
+    assert batch.params["readout_error_run_by_position"] == [0.02 + 0.001 * q for q in (4, 1, 3)]
+    assert batch.params["readout_error_by_position"] == [0.01 + 0.001 * q for q in (4, 1, 3)]
+    assert batch.params["calibration_date"] != RUN_DATE_R8
+
+
+def test_r8_job_sem_properties_grava_none_e_fecha_a_conta(h):
+    result, job = h.send(shots=4)
+    out = h.collector.retrieve(result.job_id)
+    assert out.state == "final"
+    batch = load_batch(h.raw_dir / out.output_file)
+    assert batch.params["calibration_date_run"] is None
+    assert batch.params["readout_error_run_by_position"] is None
+    assert np.array_equal(batch.bits, job.expected_bits)
+
+
+@pytest.mark.parametrize("props", [RuntimeError("fora do ar"), RunPropsR8("raise"),
+                                   RunPropsR8("range")],
+                         ids=["properties-levanta", "leitura-levanta", "valor-fora-de-faixa"])
+def test_r8_retrato_ruim_nao_custa_o_lote(h, monkeypatch, props):
+    _job_com_properties_r8(monkeypatch, props)
+    result, job = h.send(shots=4)
+    out = h.collector.retrieve(result.job_id)
+    assert out.state == "final"
+    batch = load_batch(h.raw_dir / out.output_file)
+    assert batch.params["calibration_date_run"] is None
+    assert batch.params["readout_error_run_by_position"] is None
+    assert np.array_equal(batch.bits, job.expected_bits)

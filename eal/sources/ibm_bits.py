@@ -156,18 +156,23 @@ def build_ibm_params(*, backend_name: str, job_id: str, shots: int,
                      readout_error: Sequence[float] | None,
                      calibration_date: str | None, rep_delay_seconds: float,
                      max_execution_time_seconds: float, primitive: str,
-                     sdk_versions: dict[str, str]) -> dict[str, Any]:
+                     sdk_versions: dict[str, str],
+                     readout_error_run: Sequence[float] | None = None,
+                     calibration_date_run: str | None = None) -> dict[str, Any]:
     """``params`` do ``RawBatch`` de um job da IBM.
 
     Traz as quatro chaves do G6 (``backend``, ``job_id``, ``shots``, ``qubits``) e os nomes
     da ``qpu_sim`` (``n_qubits``, ``physical_qubits``, ``bit_order``, ``discarded_bits``,
     ``calibration_date``). Um lote da IBM nunca descarta bits: cada shot entra inteiro.
     ``readout_error_by_position[i]`` é o erro de leitura do qubit ``physical_qubits[i]``.
+    ``calibration_date_run`` e ``readout_error_run_by_position`` são o retrato da calibração
+    em vigor na execução (R8); ``None`` se indisponível ou em lote anterior ao R8.
     """
     if not _is_int(shots) or shots < 1:
         raise ValueError("shots deve ser inteiro positivo")
     physical = _check_physical(physical_qubits)
     errors, cal_date = _check_snapshot(readout_error, calibration_date, len(physical))
+    run_errors, run_date = _check_snapshot(readout_error_run, calibration_date_run, len(physical))
     max_time = _check_float("max_execution_time_seconds", max_execution_time_seconds,
                             0.0, 1e7)
     if max_time <= 0:
@@ -185,6 +190,8 @@ def build_ibm_params(*, backend_name: str, job_id: str, shots: int,
         "discarded_bits": 0,
         "calibration_date": cal_date,
         "readout_error_by_position": errors,
+        "calibration_date_run": run_date,
+        "readout_error_run_by_position": run_errors,
         "rep_delay_seconds": _check_float("rep_delay_seconds", rep_delay_seconds, 0.0, 1.0),
         "max_execution_time_seconds": max_time,
         "sdk": _check_versions(sdk_versions),

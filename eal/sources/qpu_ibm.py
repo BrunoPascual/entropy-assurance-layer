@@ -245,6 +245,21 @@ def _snapshot(backend: Any, physical: list[int]) -> tuple[list[float] | None, st
     except Exception:  # noqa: BLE001
         return None, None
 
+def _run_snapshot(job: Any, physical: list[int]) -> tuple[list[float] | None, str | None]:
+    """Calibração em vigor quando o job rodou (``job.properties()``), R8; None se indisponível.
+
+    Nunca levanta: um retrato ruim não pode custar o lote, que já foi pago.
+    """
+    try:
+        props = job.properties()
+        date = props.last_update_date
+        errors = [float(props.readout_error(q)) for q in physical]
+    except Exception:  # noqa: BLE001
+        return None, None
+    if date is None or not all(0.0 <= e <= 1.0 for e in errors):
+        return None, None
+    return errors, str(date)
+
 
 def _rep_delay(backend: Any) -> float:
     """Intervalo entre shots que o job vai usar (o padrão do backend; não é alterado)."""
@@ -481,10 +496,12 @@ class IbmCollector:
     def _save_result(self, job: Any, job_id: str, manifest: dict[str, Any]) -> Path:
         """Converte o resultado e salva o lote cru; dado inutilizável fecha a contagem e levanta."""
         try:
+            run_errors, run_date = _run_snapshot(job, manifest["physical_qubits"])
             params = build_ibm_params(
                 backend_name=manifest["backend"], job_id=job_id, shots=manifest["shots"],
                 physical_qubits=manifest["physical_qubits"], readout_error=manifest["readout_error"],
                 calibration_date=manifest["calibration_date"],
+                readout_error_run=run_errors, calibration_date_run=run_date,
                 rep_delay_seconds=manifest["rep_delay_seconds"],
                 max_execution_time_seconds=manifest["reserve_seconds"],
                 primitive=manifest["primitive"], sdk_versions=manifest["sdk_versions"])
