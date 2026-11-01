@@ -20,16 +20,21 @@ diferente, recusa.
 
 Uso (na raiz do projeto):
     py -3.12 scripts\\inventario_coleta1.py
-Código de saída: 0 gravado ou já igual; 1 recusado (nada foi gravado).
+    py -3.12 scripts\\inventario_coleta1.py --sessao coleta2
+A sessão (só letras e dígitos) escolhe os lotes e o nome da saída,
+``data/results/dia6_<sessao>_inventario.csv``; o padrão é ``coleta1``.
+Código de saída: 0 gravado ou já igual; 1 recusado (nada foi gravado); 2 erro de uso.
 """
 from __future__ import annotations
 
+import argparse
 import csv
 import hashlib
 import io
 import json
 import math
 import os
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -42,6 +47,7 @@ from eal.sources.qpu_budget import read_log  # noqa: E402
 SESSION = "coleta1"
 RAW_DIR = Path("data/raw")
 LOG_PATH = Path("data/logs/qpu_usage.csv")
+SESSION_RE = re.compile(r"[A-Za-z0-9]+")
 OUT_PATH = Path("data/results/dia6_coleta1_inventario.csv")
 FORMAT = "eal-rawbatch-v1"
 PACKING = "numpy.packbits, bitorder=big"
@@ -167,9 +173,25 @@ def write(out_path: Path, data: bytes) -> str:
     return "gravado"
 
 
-def main(raw_dir: Path = RAW_DIR, log_path: Path = LOG_PATH, out_path: Path = OUT_PATH) -> int:
+def out_path_for(session: str) -> Path:
+    """CSV do inventário de uma sessão; ``coleta1`` dá o nome de sempre (OUT_PATH)."""
+    return Path(f"data/results/dia6_{session}_inventario.csv")
+
+
+def check_session(session: str) -> str:
+    """Só letras e dígitos: o nome entra num glob e no nome do arquivo, e ``_`` separa o rótulo."""
+    if not isinstance(session, str) or not SESSION_RE.fullmatch(session):
+        raise InventoryError(f"sessão inválida: {session!r}")
+    return session
+
+
+def main(raw_dir: Path = RAW_DIR, log_path: Path = LOG_PATH, out_path: Path | None = None,
+         session: str = SESSION) -> int:
     try:
-        rows = build_rows(raw_dir, log_path)
+        session = check_session(session)
+        if out_path is None:
+            out_path = out_path_for(session)
+        rows = build_rows(raw_dir, log_path, session)
         data = render(rows)
         state = write(out_path, data)
     except (InventoryError, OSError, ValueError) as exc:
@@ -184,5 +206,12 @@ def main(raw_dir: Path = RAW_DIR, log_path: Path = LOG_PATH, out_path: Path = OU
     return 0
 
 
+def cli(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description="Dia 6: inventário dos lotes de uma sessão")
+    ap.add_argument("--sessao", default=SESSION)
+    args = ap.parse_args(argv)
+    return main(session=args.sessao)
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(cli())

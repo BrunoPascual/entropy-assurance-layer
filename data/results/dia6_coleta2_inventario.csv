@@ -1,0 +1,3 @@
+arquivo,job_id,backend,qubits,shots,n_bits,uso_qpu_s,reserva_s,calibracao,npy_sha256,json_sha256
+2026-11-01_ibm_kingston_coleta2_001.json,dbjq01pffo6c73ba4lo0,ibm_kingston,156,9616,1500096,5,20,2026-11-01 16:56:51-03:00,ff08958ac6fc87ecf112fdc4c0758774ac02ef6bc7854c8bceccc5fcebd5137b,a78796033a441ccd780f59a69bff95ca79fed45b6dac9d8f50aed2d5cad10c78
+2026-11-01_ibm_kingston_coleta2_002.json,dbjq4ehkdqps73912u30,ibm_kingston,156,9616,1500096,5,20,2026-11-01 16:56:51-03:00,a53617e2443e90a2f6b5153841788a9f5c656dcfa7495df1609122d1cf346ea4,2bb76015ce85c232ca0af692ba8ce9d95febb45ae1d41e1e1c1db7d1404bd5bb
