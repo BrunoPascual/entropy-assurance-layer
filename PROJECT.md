@@ -1343,3 +1343,26 @@ A análise está no bloco `dia6-e1parcial`, logo acima.
 Sessão de coleta 2 em outro horário do dia, para medir deriva (seção 9.3). Primeiro o plano congelado neste documento, sem enviar nada; o envio é só do usuário.
 
 <!-- dia6-estado:end -->
+
+<!-- coleta2-plano:start -->
+### Plano congelado da coleta 2 (Dia 6, registrado antes do primeiro envio)
+
+Registrado em 01/11/2026 sobre o commit e82e081. Nenhum parâmetro abaixo muda depois do primeiro envio da coleta 2 (seção 6.5).
+
+- **Objetivo:** medir a deriva no mesmo dia (seção 9.3), comparando com a coleta 1.
+- **Backend, qubits, circuito e `rep_delay`:** iguais aos da coleta 1 (ibm_kingston; os 156 operacionais, sem exclusão; `hadamard_all_measure` com SamplerV2; 0,00025 s).
+- **Sessão:** `coleta2`.
+- **Jobs:** 2, enviados um de cada vez. O segundo só é enviado depois que o primeiro for recuperado e inspecionado.
+- **Shots por job:** 9.616, o que dá 1.500.096 bits por job e 3.000.192 no total.
+- **Reserva por job:** 20 s.
+- **Horário:** o primeiro envio não acontece antes das 17:00 (-03:00) de 01/11/2026, cerca de 5 h depois da coleta 1.
+- **Custo:** a coleta 1 usou 5 s por job. Saldo antes do envio: 583 s.
+- **Calibração:** cada lote grava o retrato do envio (`calibration_date`, `readout_error_by_position`) e, pelo R8 (commit e82e081), o da execução (`calibration_date_run`, `readout_error_run_by_position`).
+- **Critérios de parada e o que não é critério de parada:** iguais aos da coleta 1, inclusive parar se o primeiro job usar mais de 15 s. Ao parar: documentar e não reenviar sem uma nova decisão registrada aqui.
+- **Critérios de análise, fixados antes de ver os dados:**
+  - saúde e H estimada por lote, pelo mesmo pipeline da coleta 1, com limiar 0,9;
+  - conjunto fixo: viés além da leitura nos qubits 14, 21 e 138; controles 121 e 131; pares 112-113 e 130-131. Nenhum item entra ou sai depois de ver a coleta 2;
+  - réplica contra a coleta 1: mesmo sinal e |z| > 2. Onde a direção se reproduz e a magnitude não (`magnitude_compativel`), o resultado é "direção reproduzida, magnitude não";
+  - cada comparação registra se a calibração da execução é a mesma da coleta 1 ou não.
+- **Análise:** só depois da parametrização da sessão nos scripts de análise (DEP_SESSAO).
+<!-- coleta2-plano:end -->
