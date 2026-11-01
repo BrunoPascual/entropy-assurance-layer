@@ -13,6 +13,9 @@ Regras que o código garante (cada uma tem teste):
   ``run`` e não espera a fila; a recuperação NUNCA reenvia (reenviar gasta o orçamento duas
   vezes);
 - na recuperação os dados crus são salvos ANTES de qualquer linha ``final`` no log;
+- o uso final é lido em ``metrics()['usage']['qpu_charge_time_seconds']`` (formato real do
+  Runtime, visto no Dia 6), depois em ``usage()`` e, por último, na chave antiga
+  ``quantum_seconds``; vale o primeiro valor válido;
 - ``usage()`` da IBM devolve 0 até o cálculo terminar: sem uso final, o lote é salvo mas o
   ``final`` não é gravado (o job segue contando pela reserva cheia) e o estado é
   ``usage_pending``; recuperar de novo completa o ``final`` sem salvar um segundo lote;
@@ -184,21 +187,28 @@ def _status_name(job: Any) -> str:
 def _usage_seconds(job: Any) -> float | None:
     """Uso final do job em segundos de QPU; None se ainda não foi calculado.
 
+    Ordem de leitura (vale o primeiro valor válido): ``metrics()['usage']
+    ['qpu_charge_time_seconds']``, a chave que a IBM devolveu no job dbji1pgnceqs73ak2c8g;
+    depois ``usage()``; por último ``metrics()['usage']['quantum_seconds']``, chave antiga que
+    a IBM não devolveu e fica só como último recurso.
+
     Qualquer falha na leitura vira None (o job passa a contar pela reserva cheia, o lado
     seguro). Zero também é None: um job real nunca usa 0 s, e a IBM devolve 0 enquanto calcula.
     """
-    candidates: list[Any] = []
+    usage: Any = None
     try:
         metrics = job.metrics()
         usage = metrics.get("usage") if isinstance(metrics, dict) else None
-        if isinstance(usage, dict):
-            candidates.append(usage.get("quantum_seconds"))
     except Exception:  # noqa: BLE001
         pass
+    if not isinstance(usage, dict):
+        usage = {}
+    candidates: list[Any] = [usage.get("qpu_charge_time_seconds")]
     try:
         candidates.append(job.usage())
     except Exception:  # noqa: BLE001
         pass
+    candidates.append(usage.get("quantum_seconds"))
     for value in candidates:
         if (isinstance(value, (int, float)) and not isinstance(value, bool)
                 and math.isfinite(value) and value > 0):

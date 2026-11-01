@@ -24,6 +24,11 @@ POLICY = BudgetPolicy(total_seconds=600, margin_seconds=30, daily_cap_seconds=33
                       max_job_reserve_seconds=60, window_days=28)
 T0 = datetime(2026, 11, 2, 15, 0, tzinfo=timezone.utc)
 CAL_DATE = datetime(2026, 10, 31, 19, 21, 17, tzinfo=timezone(timedelta(hours=-3)))
+# metrics()['usage'] como a IBM devolveu no job dbji1pgnceqs73ak2c8g (ibm_kingston, 01/11/2026).
+USAGE_REAL = {"qpu_charge_time_seconds": 2, "value": 0.032717, "unit": "resource_units",
+              "status": "complete",
+              "details": [{"value": 0.032717, "unit": "resource_units",
+                           "metric": {"id": "caffe3ca-729c-5750-8777-df63bbf8bfd9", "value": 2}}]}
 SIX = np.array([[1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1],
                 [1, 1, 0, 0, 1, 1], [0, 0, 1, 1, 0, 0]], dtype=bool)
 
@@ -138,8 +143,9 @@ class Harness:
         self.factory_calls, self.run_calls, self.run_error = [], [], None
         self.job_id_override, self.rows, self.use_statevector, self.counter = None, None, False, 0
         self.job_error = None
-        self.job_defaults = {"status_name": "DONE", "metrics": {"usage": {"quantum_seconds": 4}},
-                             "usage": 4.0}
+        self.job_defaults = {"status_name": "DONE",
+                             "metrics": {"usage": {**USAGE_REAL, "qpu_charge_time_seconds": 4}},
+                             "usage": 4}
         self.clock = Clock()
         self.log_path = tmp_path / "logs" / "qpu_usage.csv"
         self.raw_dir = tmp_path / "raw"
@@ -567,10 +573,18 @@ def test_uso_vem_do_metrics_e_cai_para_o_usage(h):
     assert h.collector.retrieve(result.job_id).quantum_seconds == 2.5
 
 
-def test_metrics_tem_prioridade_sobre_o_usage(h):
+def test_qpu_charge_tem_prioridade_sobre_o_usage(h):
     result, job = h.send()
-    job.metrics_value, job.usage_value = {"usage": {"quantum_seconds": 3}}, 9.0
+    job.metrics_value, job.usage_value = {"usage": {**USAGE_REAL, "qpu_charge_time_seconds": 3}}, 9
     assert h.collector.retrieve(result.job_id).quantum_seconds == 3.0
+
+
+def test_formato_real_da_ibm_fecha_a_conta(h):
+    result, job = h.send()
+    job.metrics_value, job.usage_value = {"usage": USAGE_REAL}, 2
+    out = h.collector.retrieve(result.job_id)
+    assert out.state == "final" and out.quantum_seconds == 2.0
+    assert h.log()[-1].quantum_seconds == 2.0
 
 
 def test_conta_fecha_com_o_uso_real(h):
@@ -780,6 +794,23 @@ class UsageJob:
     ({}, 0.0, None),
     ({}, float("nan"), None),
     ({}, True, None),
+    # formato real e prioridade: qpu_charge_time_seconds > usage() > quantum_seconds
+    ({"usage": USAGE_REAL}, 2, 2.0),
+    ({"usage": USAGE_REAL}, RuntimeError("y"), 2.0),
+    ({"usage": USAGE_REAL}, 0, 2.0),
+    ({"usage": {"qpu_charge_time_seconds": 3}}, 9.0, 3.0),
+    ({"usage": {"qpu_charge_time_seconds": 3, "quantum_seconds": 8}}, 0.0, 3.0),
+    ({"usage": {"qpu_charge_time_seconds": 3, "quantum_seconds": 8}}, 9.0, 3.0),
+    ({"usage": {"quantum_seconds": 8}}, 9.0, 9.0),
+    # qpu_charge_time_seconds inválido cai para o próximo
+    ({"usage": {"qpu_charge_time_seconds": 0, "quantum_seconds": 8}}, 5.0, 5.0),
+    ({"usage": {"qpu_charge_time_seconds": 0, "quantum_seconds": 8}}, 0.0, 8.0),
+    ({"usage": {"qpu_charge_time_seconds": float("nan")}}, 5.0, 5.0),
+    ({"usage": {"qpu_charge_time_seconds": True}}, 5.0, 5.0),
+    ({"usage": {"qpu_charge_time_seconds": -1}}, 5.0, 5.0),
+    ({"usage": {"qpu_charge_time_seconds": "2"}}, 5.0, 5.0),
+    ({"usage": {**USAGE_REAL, "qpu_charge_time_seconds": 0, "status": "pending"}}, 0, None),
+    ({"usage": "nao e dict"}, 5.0, 5.0),
 ])
 def test_leitura_do_uso(metrics, usage, expected):
     assert qpu_ibm._usage_seconds(UsageJob(metrics, usage)) == expected
