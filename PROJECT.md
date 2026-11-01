@@ -1122,3 +1122,18 @@ Registrado em 01/11/2026 sobre o commit dca8fb6. Nenhum parâmetro abaixo muda d
 - **Bits de calibração:** os da sessão `cal` (`cal_001` e `cal_002`, 780.000 bits) não contam para o gate.
 - **Gate do Dia 6:** 3.000.192 bits reais salvos em `data/raw`, na sessão `coleta1`.
 <!-- coleta1-plano:end -->
+
+<!-- dia6-gate:start -->
+### Resultado do gate do Dia 6 (coleta 1)
+
+Gerado por `scripts/atualizar_docs_gate6.py` a partir de `data/results/dia6_coleta1_inventario.csv` (SHA-256 `9f01c43147013f6da2de009f010899bfd46d775ac8dac2b908f9b010746d5b81`), que sai de `scripts/inventario_coleta1.py`. Os números abaixo vêm desse arquivo.
+
+- **Resultado:** ATINGIDO. 3.000.192 bits reais da QPU salvos em `data/raw`, sessão `coleta1`; a meta do plano congelado era 3.000.192.
+- **Lotes:** 2, backend ibm_kingston, 156 qubits.
+  - `2026-11-01_ibm_kingston_coleta1_001.json`: job `dbjlg80nceqs73ak89g0`, 9.616 shots, 1.500.096 bits, uso 5 s, SHA-256 do `.npy` `0b8d5b04482331f1eb7b8a356963fde7155126a033d0f66daf2e0d68a3652412`.
+  - `2026-11-01_ibm_kingston_coleta1_002.json`: job `dbjlkahffo6c73b9t1u0`, 9.616 shots, 1.500.096 bits, uso 5 s, SHA-256 do `.npy` `c8a9ca348727ecda02f79b67b052cc3b1f3517d31ec88646cc269e0780054cc9`.
+- **Uso de QPU da coleta 1:** 10 s no total.
+- **Critérios de parada:** nenhum disparou; status DONE, conversão e params do lote OK e nenhum aviso de duplicata, conferidos com `inspecionar_job_ibm.py` em cada job.
+- **Cópia dos dados crus:** `C:\projeto\ancoras\coleta1_2026-11-01`, com SHA-256 conferido arquivo a arquivo. `data/raw` não é versionado.
+- **Fica para depois:** reorganizar as seções 6.12, 9.3, 9.4 e 17 (R11), mudar o campo Status (R12) e analisar os dados no E1.
+<!-- dia6-gate:end -->
