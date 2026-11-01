@@ -418,6 +418,46 @@ def test_manifesto_existente_nao_e_sobrescrito(h):
     assert list(h.manifest_dir.glob("*.tmp")) == []
 
 
+class QiskitBackendNotFoundError(Exception):
+    """Mesmo nome da exceção do Qiskit que o dry-run levanta quando falta o backend mock_."""
+
+
+def test_falha_do_dry_run_diz_que_nada_foi_gasto(h):
+    h.run_error = TimeoutError("rede")
+    with pytest.raises(SubmitFailed) as info:
+        h.send(dry_run=True)
+    message = str(info.value)
+    assert "o dry-run falhou (TimeoutError)" in message and "nada foi gasto" in message
+    assert "incerto" not in message and "painel" not in message
+    assert not h.log_path.exists() and not h.manifest_dir.exists()
+
+
+def test_dry_run_sem_backend_mock_explica_o_open_plan(h):
+    h.run_error = QiskitBackendNotFoundError("mock_kingston")
+    with pytest.raises(SubmitFailed) as info:
+        h.send(dry_run=True)
+    message = str(info.value)
+    assert "QiskitBackendNotFoundError" in message and "nada foi gasto" in message
+    assert "backend mock" in message and "Open Plan" in message
+
+
+def test_dry_run_com_outro_erro_nao_cita_o_open_plan(h):
+    h.run_error = TimeoutError("rede")
+    with pytest.raises(SubmitFailed, match="dry-run falhou") as info:
+        h.send(dry_run=True)
+    assert "Open Plan" not in str(info.value) and "mock" not in str(info.value)
+
+
+def test_falha_do_envio_real_continua_incerta_mesmo_com_o_erro_do_mock(h):
+    h.run_error = QiskitBackendNotFoundError("x")
+    with pytest.raises(SubmitFailed) as info:
+        h.send(dry_run=False)
+    message = str(info.value)
+    assert "incerto" in message and "painel" in message
+    assert "dry-run" not in message and "Open Plan" not in message
+    assert "nada foi gasto" not in message
+
+
 # ------------------------------------------------------------------ envio: dry-run
 
 def test_dry_run_nao_grava_log_nem_manifesto(h):

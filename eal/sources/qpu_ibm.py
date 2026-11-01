@@ -60,6 +60,7 @@ MANIFEST_DIR = Path("data/logs/qpu_jobs")
 _ID_RE = re.compile(r"[A-Za-z0-9._-]{1,64}")
 _SESSION_RE = re.compile(r"[A-Za-z0-9-]+")
 _NOTE_MAX = 200
+_NO_MOCK_ERROR = "QiskitBackendNotFoundError"
 
 
 class CollectError(Exception):
@@ -326,13 +327,21 @@ class IbmCollector:
         raise BudgetRefused(decision)
 
     def _send(self, prepared: Prepared, shots: int, reserve_seconds: int, dry_run: bool) -> Any:
-        """Chama o sampler; falha aqui deixa o resultado incerto."""
+        """Chama o sampler. Falha num envio real deixa o resultado incerto; num dry-run, não."""
         try:
             sampler = self.sampler_factory(self._backend(), reserve_seconds)
             return sampler.run([prepared.isa], shots=shots, dry_run=dry_run)
         except Exception as exc:  # noqa: BLE001
+            name = type(exc).__name__
+            if dry_run:
+                hint = ""
+                if name == _NO_MOCK_ERROR:
+                    hint = (" Esta instância não tem o backend mock equivalente: o dry-run "
+                            "troca o backend por um 'mock_' e o Open Plan não o oferece.")
+                raise SubmitFailed(f"o dry-run falhou ({name}); ele não executa na QPU, então "
+                                   f"nada foi gasto.{hint}") from exc
             raise SubmitFailed("o envio falhou com resultado incerto "
-                               f"({type(exc).__name__}): confira o painel da IBM antes de reenviar") from exc
+                               f"({name}): confira o painel da IBM antes de reenviar") from exc
 
     def _log_submitted(self, job_id: str, n_qubits: int, shots: int, reserve_seconds: int,
                        session: str) -> None:
