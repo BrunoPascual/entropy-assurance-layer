@@ -32,6 +32,16 @@ IBM_DEFAULT_BACKEND = "ibm_kingston"
 IBM_DEFAULT_INSTANCE = "open-instance"
 IBM_TOKEN_ENV = "IBM_QUANTUM_TOKEN"  # nome da variável do .env; o valor nunca vai ao código
 
+# --- Dia 6: reserva por job, calibração e metas da coleta ---
+QPU_RESERVE_SAFETY_FACTOR = 1.5  # reserva do job = ceil(custo alto x fator + extra)
+QPU_RESERVE_EXTRA_SECONDS = 2  # cobre o arredondamento do uso em segundos inteiros
+QPU_CALIBRATION_FIRST_SHOTS = 1000  # 1o job de calibração (156 qubits: 156 mil bits)
+QPU_CALIBRATION_FIRST_RESERVE_SECONDS = 20  # reserva do 1o job de calibração
+QPU_CALIBRATION_TARGET_SECONDS = 8  # duração alvo do 2o job de calibração
+QPU_TARGET_BITS_MIN = 2_000_000  # gate do Dia 6: 2 a 3 milhões de bits reais
+QPU_TARGET_BITS_MAX = 3_000_000
+QPU_BACKEND_QUBITS = 156  # num_qubits do ibm_kingston (lido em 31/10/2026)
+
 # --- Dia 3: estimador de min-entropia (PROJECT.md 6.5) ---
 MCV_Z = 2.576          # quantil normal do limite superior de 99% (SP 800-90B 6.3.1)
 MCV_SYMBOL_BITS = 8    # tamanho do simbolo do segundo estimador
