@@ -1096,3 +1096,29 @@ Estimativa com um único ponto (limite superior, não medida): 2 milhões de bit
 Pendências antes da coleta 1: (1) recuperar o job de calibração, que fecha a conta no log; (2) segundo job de calibração; (3) registrar aqui o plano congelado da coleta 1 antes do primeiro envio; (4) P1: copiar data/logs/replay_history.json após o primeiro eal run real; (5) gate do Dia 6 (2 a 3 milhões de bits reais salvos), ainda não avaliado.
 Limitação nova (seção 17): o adaptador lê o uso primeiro em metrics()['usage']['quantum_seconds'], chave que a IBM não devolveu neste job; a IBM expõe qpu_charge_time_seconds. A leitura caiu em usage(), que devolveu o mesmo valor. Corrigir antes da coleta 1.
 Limitações novas (seção 17), ainda não listadas: janela de queda entre a checagem do lote e a gravação (o lote fica consumido e não registrado); leituras de semente Toeplitz não passam pelo detector de replay (premissa P3); limite de 64 MiB do histórico de replay.
+
+<!-- coleta1-plano:start -->
+### Plano congelado da coleta 1 (Dia 6, registrado antes do primeiro envio)
+
+Registrado em 01/11/2026 sobre o commit dca8fb6. Nenhum parâmetro abaixo muda depois do primeiro envio da coleta 1 (seção 6.5).
+
+- **Backend:** ibm_kingston.
+- **Qubits:** os 156 operacionais, todos, sem exclusão. A decisão foi tomada quando já existia saída da QPU nos jobs de calibração; excluir algum qubit agora seria escolher olhando os dados.
+- **Circuito:** Hadamard em todos os qubits e medição (`hadamard_all_measure`), SamplerV2, `rep_delay` padrão do backend (0,00025 s).
+- **Sessão:** `coleta1`.
+- **Jobs:** 2, enviados um de cada vez. O segundo só é enviado depois que o primeiro for recuperado e inspecionado.
+- **Shots por job:** 9.616, o que dá 1.500.096 bits por job e 3.000.192 no total.
+- **Reserva por job:** 20 s.
+- **Base do custo:** dois jobs de calibração (1.000 shots: 2 s; 4.000 shots: 3 s). O modelo é 1,667 s fixos + 0,333 ms por shot, com estimativa central de 4,9 s por job. A IBM cobra em segundos inteiros; com ±0,5 s em cada ponto, o pior caso é cerca de 7,2 s por job.
+- **Critérios de parada:** a coleta encerra quando os 2 jobs estiverem salvos. Ela para antes se acontecer qualquer uma destas situações:
+  - recusa do orçamento;
+  - job com status diferente de DONE;
+  - falha de conversão, ou params do lote diferentes de OK no `inspecionar`;
+  - aviso de lote duplicado;
+  - primeiro job usando mais de 15 s (3 vezes a estimativa central, sinal de que o modelo de custo está errado).
+
+  Ao parar: documentar e não reenviar sem uma nova decisão registrada aqui.
+- **O que não é critério de parada:** a estatística dos bits (viés, H estimada). Reprovação no limiar 0,9 é resultado válido.
+- **Bits de calibração:** os da sessão `cal` (`cal_001` e `cal_002`, 780.000 bits) não contam para o gate.
+- **Gate do Dia 6:** 3.000.192 bits reais salvos em `data/raw`, na sessão `coleta1`.
+<!-- coleta1-plano:end -->
