@@ -1,0 +1,376 @@
+{
+  "tipo": "estado_para_novo_chat",
+  "projeto": "EAL (Entropy Assurance Layer), protótipo de pesquisa",
+  "data_do_estado": "2026-11-01",
+  "etapa_concluida": "Dia 6, etapa 5: E1 parcial (QPU real, simulador e os; jobs cal contra a coleta 1) registrado no PROJECT.md",
+  "proxima_etapa": "Sessão de coleta 2 em outro horário do dia, para medir deriva (2 h)",
+  "onde_estamos": "Gate do Dia 6 atingido e E1 parcial feito sobre a coleta 1. A coleta 2 não foi iniciada. O campo Status do PROJECT.md ainda diz Dia 5 de 9 (R12, depois do R11).",
+  "contexto": {
+    "pasta_projeto": "C:\\projeto\\EntropyAssuranceLayer",
+    "sistema": "Windows 11, PowerShell",
+    "python": "py -3.12 sempre; sem ambiente virtual",
+    "idioma_do_usuario": "português; prefere passos curtos, blocos PowerShell colados inteiros e saída do terminal, não relatórios longos",
+    "regras_de_trabalho": [
+      "não alterar código sem aprovação explícita do usuário",
+      "não escrever código antes de plano em até 5 linhas, arquivos afetados e forma de teste",
+      "todo arquivo entregue é conferido por SHA-256 antes de copiar; blocos PowerShell confirmam o hash e só copiam se bater",
+      "scripts de alteração: uso único, tudo ou nada, idempotentes, preservam CRLF ou LF, recusam sem gravar se algo não bater",
+      "git add por nome de arquivo, nunca git add .; checagem de segredos (T11) antes de cada commit; commit só com árvore limpa",
+      "não usar sed em blocos PowerShell; trocar texto com Python",
+      "não adivinhar nomes de campos, flags ou cálculos: ler o código ou a saída real antes",
+      "ao fim de cada bloco, indicar modelo e intensidade do Claude para o próximo bloco",
+      "gasto de QPU: só o usuário envia, com comando explícito e SIM; o assistente não roda CLI da IBM nem testes da suíte real",
+      "todo número do relatório e do PROJECT.md sai de um CSV em data/results gerado por script; nada digitado à mão (seção 11)",
+      "texto com acento passado ao Python por stdin no PowerShell sai trocado; usar escapes \\uXXXX ou um arquivo",
+      "o assistente só diz que testou o que de fato rodou e diz o que não rodou (o ambiente dele não tem o repositório)",
+      "critérios de análise (conjunto de qubits, limiares) são fixados no código antes de ler os dados novos"
+    ],
+    "limitacoes_do_assistente": [
+      "não roda a CLI, o pipeline nem os testes da suíte real: vale só a saída colada pelo usuário",
+      "não acessa a conta IBM nem a QPU",
+      "os módulos reconstruídos no ambiente do assistente são aproximações; a verdade é a suíte do usuário"
+    ]
+  },
+  "estado_do_repositorio": {
+    "branch": "master",
+    "ultimo_commit": "700cddd",
+    "observacao_ultimo_commit": "HEAD no momento do registro, antes do commit do próprio registro",
+    "arvore": "limpa no momento do registro",
+    "commit_base_anterior_ao_dia_6": "23d328a",
+    "commits_desde_a_base": [
+      {
+        "hash": "182c5a8",
+        "titulo": "Dia 6 etapa 0: script de reconhecimento da conta e do backend IBM (so leitura)"
+      },
+      {
+        "hash": "2c911e8",
+        "titulo": "Dia 6 etapa 0b: sonda complementar (janela do orcamento, max_shots, erro de leitura por qubit, aviso do SamplerV2)"
+      },
+      {
+        "hash": "aa8f385",
+        "titulo": "Dia 6 etapa 1 passo 1: guarda de orcamento de QPU e log de uso (qpu_budget), 107 testes, 34 mutacoes"
+      },
+      {
+        "hash": "542fcbf",
+        "titulo": "Dia 6 etapa 1 passo 2: conversao do BitArray em bits e params do lote da IBM (ibm_bits), 82 testes, 33 mutacoes"
+      },
+      {
+        "hash": "203a73f",
+        "titulo": "Dia 6 etapa 1 passo 3a: constantes da politica de QPU e do acesso a IBM no config.py (script tudo-ou-nada), 39 testes"
+      },
+      {
+        "hash": "b6bd0cd",
+        "titulo": "Dia 6 etapa 1 passo 3b: adaptador da IBM (envio com limite duro, recuperacao, manifesto), 102 testes, 42 mutacoes; scripts de mutacao sem bytecode obsoleto"
+      },
+      {
+        "hash": "f0e38a6",
+        "titulo": "Dia 6 etapa 1 passo 4a: modelo de custo de QPU e planejamento da coleta (qpu_calibration), 110 testes, 31 mutacoes"
+      },
+      {
+        "hash": "655bf84",
+        "titulo": "Dia 6 etapa 1 passo 4b: ponto de entrada da coleta na IBM (status, calibrar, enviar com confirmacao, recuperar) e constantes de calibracao, 102 testes, 40 mutacoes"
+      },
+      {
+        "hash": "8e6ba62",
+        "titulo": "Dia 6 P2: fecha as mutacoes do G6 (params do lote no recibo): 20 testes de lacunas, script de mutacoes com descoberta automatica, 19 mutacoes mortas"
+      },
+      {
+        "hash": "ab11bc5",
+        "titulo": "Dia 6: mensagem do dry-run sem backend mock (nada foi gasto), inspecao so de leitura de um job da IBM (fila, estimativa, deriva de calibracao), 53 testes, mutacoes 46 e 28"
+      },
+      {
+        "hash": "2ce238c",
+        "titulo": "Dia 6: registro da calibracao na QPU real e pendencias em PROJECT.md e THREAT_MODEL.md (bloco acrescentado ao fim, sem editar secoes), 19 testes"
+      },
+      {
+        "hash": "dca8fb6",
+        "titulo": "R2: uso lido primeiro em qpu_charge_time_seconds (formato real da IBM), depois usage() e quantum_seconds; 122 testes, 49 mutacoes; T11 conferido em 2ce238c e no stage"
+      },
+      {
+        "hash": "80837a0",
+        "titulo": "R4: plano congelado da coleta 1 no PROJECT.md antes do primeiro envio (2 jobs x 9616 shots, reserva 20 s, 156 qubits, sessao coleta1), 18 testes"
+      },
+      {
+        "hash": "deac699",
+        "titulo": "R6: gate do Dia 6 atingido (3.000.192 bits reais, sessao coleta1, 2 jobs, 10 s de QPU); inventario em data/results e registro no PROJECT.md, 48 testes"
+      },
+      {
+        "hash": "c1d8210",
+        "titulo": "Dia 6 etapa 4: pipeline nos dados reais da coleta 1 vs simulador e os (script, 16 testes, 2 CSVs); QPU reprovada no monobit, H estimada 0,956-0,962; 2422 testes"
+      },
+      {
+        "hash": "863fb14",
+        "titulo": "Dia 6 etapa 4b: resumo da coleta 1 (frac1, correlacoes, zdiff) e excesso sobre o erro de leitura; script, 15 testes, 2 CSVs; 2437 testes"
+      },
+      {
+        "hash": "a3bfb8c",
+        "titulo": "Dia 6 etapa 5: E1 parcial registrado no PROJECT.md (gerado dos CSVs); jobs cal vs coleta 1 por qubit com conjunto fixo pre-registrado; viés de 14 e 138 presente em cal_002 e ausente em cal_001; intervalos entre lotes corrigidos (15 a 54 min, por criado_em); 2 scripts, 40 testes, 4 CSVs"
+      },
+      {
+        "hash": "e0f7225",
+        "titulo": "Dia 6: docstring do analisar_cal.py corrigido (intervalo entre lotes vem de criado_em)"
+      },
+      {
+        "hash": "700cddd",
+        "titulo": "Dia 6: script de estado (bloco no PROJECT.md e JSON para o proximo chat) e 23 testes"
+      }
+    ]
+  },
+  "suite": {
+    "ultima_execucao_completa": "2500 passed, 1 skipped",
+    "comando": "py -3.12 -m pytest -q",
+    "observacao": "test_noisy_million_bits_fast depende da velocidade da máquina (T_TEMPO)"
+  },
+  "resultados_dia6": {
+    "coleta_1": {
+      "jobs": [
+        "dbjlg80nceqs73ak89g0",
+        "dbjlkahffo6c73b9t1u0"
+      ],
+      "bits_totais": 3000192,
+      "uso_qpu_s": 10.0
+    },
+    "e1_parcial": {
+      "onde_ler": "PROJECT.md, blocos dia6-e1parcial e dia6-estado",
+      "saude_por_lote": [
+        {
+          "fonte": "qpu_real",
+          "lote": "1",
+          "aprovado": false,
+          "h_estimada": 0.962254,
+          "bits_extraidos": 0
+        },
+        {
+          "fonte": "qpu_real",
+          "lote": "2",
+          "aprovado": false,
+          "h_estimada": 0.955502,
+          "bits_extraidos": 0
+        },
+        {
+          "fonte": "simulador",
+          "lote": "1",
+          "aprovado": false,
+          "h_estimada": 0.959153,
+          "bits_extraidos": 0
+        },
+        {
+          "fonte": "simulador",
+          "lote": "2",
+          "aprovado": false,
+          "h_estimada": 0.961837,
+          "bits_extraidos": 0
+        },
+        {
+          "fonte": "os",
+          "lote": "1",
+          "aprovado": true,
+          "h_estimada": 0.969492,
+          "bits_extraidos": 1359324
+        },
+        {
+          "fonte": "os",
+          "lote": "2",
+          "aprovado": true,
+          "h_estimada": 0.966476,
+          "bits_extraidos": 1354932
+        }
+      ],
+      "cal_contra_coleta1": [
+        {
+          "item": "qubit 14",
+          "grupo": "vies_alem_da_leitura",
+          "replica_em": [
+            "cal_002"
+          ],
+          "nao_replica_em": [
+            "cal_001"
+          ],
+          "nao_testavel_em": []
+        },
+        {
+          "item": "qubit 21",
+          "grupo": "vies_alem_da_leitura",
+          "replica_em": [
+            "cal_002"
+          ],
+          "nao_replica_em": [],
+          "nao_testavel_em": [
+            "cal_001"
+          ]
+        },
+        {
+          "item": "qubit 138",
+          "grupo": "vies_alem_da_leitura",
+          "replica_em": [
+            "cal_002"
+          ],
+          "nao_replica_em": [
+            "cal_001"
+          ],
+          "nao_testavel_em": []
+        },
+        {
+          "item": "qubit 121",
+          "grupo": "controle_leitura",
+          "replica_em": [
+            "cal_001",
+            "cal_002"
+          ],
+          "nao_replica_em": [],
+          "nao_testavel_em": []
+        },
+        {
+          "item": "qubit 131",
+          "grupo": "controle_leitura",
+          "replica_em": [
+            "cal_001",
+            "cal_002"
+          ],
+          "nao_replica_em": [],
+          "nao_testavel_em": []
+        },
+        {
+          "item": "par 112-113",
+          "grupo": "par_replicado_coleta1",
+          "replica_em": [
+            "cal_002"
+          ],
+          "nao_replica_em": [],
+          "nao_testavel_em": [
+            "cal_001"
+          ]
+        },
+        {
+          "item": "par 130-131",
+          "grupo": "par_replicado_coleta1",
+          "replica_em": [],
+          "nao_replica_em": [],
+          "nao_testavel_em": [
+            "cal_001",
+            "cal_002"
+          ]
+        }
+      ]
+    },
+    "csvs": [
+      {
+        "arquivo": "dia6_coleta1_inventario.csv",
+        "sha256": "16b4c2b5bd5ba94479c8b26b9a4830cfb0da82662adb939adaf68bacee37acf5"
+      },
+      {
+        "arquivo": "dia6_deriva_dia_conjunto_fixo.csv",
+        "sha256": "543627875f9bfa2c64d0c642ab338b6e9375e25e391b26d008836f439ad63e9e"
+      },
+      {
+        "arquivo": "dia6_deriva_dia_estabilidade.csv",
+        "sha256": "0051ad524090bf8a20563f2bce7118aabb03feb58693869d10a38f12de9638e2"
+      },
+      {
+        "arquivo": "dia6_deriva_dia_lotes.csv",
+        "sha256": "3078d678a7beb06409d8a804de88e3327ddf7b65276f146283d588ebe0bcdcf2"
+      },
+      {
+        "arquivo": "dia6_deriva_dia_por_qubit.csv",
+        "sha256": "fc4a986065fcbf1c07cc06c79a5860e967946ce1ac94b10b6af234878bbe1075"
+      },
+      {
+        "arquivo": "dia6_qpu_excesso_leitura.csv",
+        "sha256": "d3fe3fad35fa33c3fd50d5b861903dc9a56cb70c16cfbb7bf789b41c1f4f40a6"
+      },
+      {
+        "arquivo": "dia6_qpu_vs_sim_lotes.csv",
+        "sha256": "5023a1a6df5473f2be955d66681d732127f6d29714424d0060b9b13cefbb6e14"
+      },
+      {
+        "arquivo": "dia6_qpu_vs_sim_por_qubit.csv",
+        "sha256": "9af7321c7c7e5423a1e6337de05f29455f6c2a529962f5220f2177951df05895"
+      },
+      {
+        "arquivo": "dia6_qpu_vs_sim_resumo.csv",
+        "sha256": "dd6f7375d0947e8cd0030eddf9552330468964dcbee860d51a1a47e4790ef7ba"
+      }
+    ]
+  },
+  "orcamento": {
+    "limite_total_s": 600,
+    "janela_dias": 28,
+    "teto_24h_s": 330,
+    "reserva_maxima_por_job_s": 60,
+    "margem_s": 30,
+    "aviso": "o saldo atual não está neste arquivo; ver saldo_remoto_s em estado_dia6_fim_coleta1.json (lido antes de fechar a coleta 1) e conferir o saldo no painel da IBM ou no comando de status antes de qualquer envio"
+  },
+  "pendencias": [
+    {
+      "id": "T11",
+      "titulo": "checagem de segredos (T11) sobre todos os commits da lista acima; o usuário ainda não confirmou a saída dela nos commits feitos nesta fase",
+      "prioridade": "antes de qualquer novo commit"
+    },
+    {
+      "id": "COLETA2",
+      "titulo": "coleta 2 em outro horário do dia, para medir deriva (seção 9.3): plano congelado no PROJECT.md antes do primeiro envio; só o usuário envia, com comando explícito e SIM",
+      "prioridade": "próxima etapa"
+    },
+    {
+      "id": "DEP_SESSAO",
+      "titulo": "inventario_coleta1.py, analisar_coleta1.py e analisar_cal.py fixam a sessão coleta1 (e o prefixo coleta1_); parametrizar a sessão antes de analisar a coleta 2 (muda código: precisa de plano e aprovação)",
+      "prioridade": "antes de analisar a coleta 2"
+    },
+    {
+      "id": "R8",
+      "titulo": "gravar o retrato da calibração da execução em cada lote; sem isso a deriva por tempo e por calibração não se separa (o registro da seção 18 diz que o cal_001 rodou sob uma calibração diferente da data gravada no lote)",
+      "prioridade": "antes da coleta 2"
+    },
+    {
+      "id": "CRITERIO_REPLICA",
+      "titulo": "o critério 'replica' (mesmo sinal e |z| > 2) é fraco: onde a magnitude é incompatível, relatar 'direção reproduzida, magnitude não'",
+      "prioridade": "ao escrever o relatório"
+    },
+    {
+      "id": "R11",
+      "titulo": "reorganizar as seções 6.12, 9.3, 9.4 e 17 do PROJECT.md com o conteúdo dos blocos acrescentados ao fim (dia6-e1parcial e dia6-estado incluídos)",
+      "prioridade": "antes de mudar o Status"
+    },
+    {
+      "id": "R12",
+      "titulo": "campo Status do PROJECT.md ainda diz Dia 5 de 9; atualizar depois do R11",
+      "prioridade": "depois do R11"
+    },
+    {
+      "id": "BACKUP_RESULTADOS",
+      "titulo": "copiar data/results para C:\\projeto\\ancoras (os dados crus já têm cópia em coleta1_2026-11-01)",
+      "prioridade": "baixa"
+    },
+    {
+      "id": "COLETA3",
+      "titulo": "coleta 3 (deriva entre dias), seção 9.3: decisão do usuário; vem antes da coleta 2 na ordem de cortes da seção 16",
+      "prioridade": "decidir antes do Dia 7"
+    },
+    {
+      "id": "R7",
+      "titulo": "copiar data\\logs\\replay_history.json para C:\\projeto\\ancoras após o primeiro eal run real",
+      "prioridade": "depois do primeiro eal run real"
+    },
+    {
+      "id": "R9",
+      "titulo": "trocar SamplerV2 pelo executor_sampler.Sampler antes de qualquer atualização do pacote",
+      "prioridade": "baixa, versão fixada"
+    },
+    {
+      "id": "R10",
+      "titulo": "limpeza: texto 'disponível para um job' do status ignora o limite de 60 s; RuntimeJobNotFound aparece como erro inesperado; entrada de log do dry-run recusado",
+      "prioridade": "baixa"
+    },
+    {
+      "id": "T_TEMPO",
+      "titulo": "test_noisy_million_bits_fast depende da velocidade da máquina; registrar como limitação na seção 17",
+      "prioridade": "junto com o R11"
+    }
+  ],
+  "comando_de_abertura_sugerido": "Leia este JSON e o PROJECT.md. Estamos no Dia 6 do EAL. Etapa concluída: E1 parcial (gate da coleta 1 atingido). Próximo passo: coleta 2, em outro horário do dia, para medir deriva. Antes de qualquer código: (1) peça git status e git log -5; (2) leia no PROJECT.md a seção 9.3, o plano congelado da coleta 1 e os blocos dia6-estado e dia6-e1parcial; (3) proponha o plano congelado da coleta 2 em até 5 linhas, sem código e sem enviar nada, incluindo como a sessão será parametrizada (DEP_SESSAO) e o R8. Não rode nada que gaste QPU.",
+  "modelo_recomendado_para_o_proximo_chat": {
+    "modelo": "Opus 5.5",
+    "intensidade": "média",
+    "motivo": "planejar e congelar a coleta 2 e mudar poucos scripts; sem gasto de QPU até o SIM do usuário"
+  }
+}

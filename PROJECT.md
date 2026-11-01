@@ -1269,3 +1269,77 @@ Estabilidade do p1 dos qubits entre pares de lotes (zdiff, com shots diferentes)
 - Isto é um registro de medições. A causa do viés (leitura, porta, relaxação, calibração ou crosstalk) não foi determinada.
 
 <!-- dia6-e1parcial:end -->
+
+<!-- dia6-estado:start -->
+### Estado ao fim da etapa 5 do Dia 6 (registro)
+
+Gerado por `scripts/atualizar_estado_dia6.py` a partir do git, dos CSVs de `data/results` e de `eal/config.py`. O campo Status deste documento não foi alterado (R12 depende do R11).
+
+- Branch `master`; HEAD no momento do registro (antes do commit do próprio registro): `700cddd`; árvore limpa.
+- Última execução completa da suíte, informada na hora do registro: 2500 passed, 1 skipped (`py -3.12 -m pytest -q`).
+- Coleta 1: 2 jobs, 3000192 bits, 10 s de QPU (pelo inventário).
+- Orçamento (`eal/config.py`): 600 s por janela de 28 dias; teto de 24 h 330 s; reserva máxima por job 60 s; margem 30 s. O saldo atual não está neste registro: conferir antes de qualquer envio.
+
+#### Commits desde `23d328a`
+
+| Commit | Título |
+| --- | --- |
+| `182c5a8` | Dia 6 etapa 0: script de reconhecimento da conta e do backend IBM (so leitura) |
+| `2c911e8` | Dia 6 etapa 0b: sonda complementar (janela do orcamento, max_shots, erro de leitura por qubit, aviso do SamplerV2) |
+| `aa8f385` | Dia 6 etapa 1 passo 1: guarda de orcamento de QPU e log de uso (qpu_budget), 107 testes, 34 mutacoes |
+| `542fcbf` | Dia 6 etapa 1 passo 2: conversao do BitArray em bits e params do lote da IBM (ibm_bits), 82 testes, 33 mutacoes |
+| `203a73f` | Dia 6 etapa 1 passo 3a: constantes da politica de QPU e do acesso a IBM no config.py (script tudo-ou-nada), 39 testes |
+| `b6bd0cd` | Dia 6 etapa 1 passo 3b: adaptador da IBM (envio com limite duro, recuperacao, manifesto), 102 testes, 42 mutacoes; scripts de mutacao sem bytecode obsoleto |
+| `f0e38a6` | Dia 6 etapa 1 passo 4a: modelo de custo de QPU e planejamento da coleta (qpu_calibration), 110 testes, 31 mutacoes |
+| `655bf84` | Dia 6 etapa 1 passo 4b: ponto de entrada da coleta na IBM (status, calibrar, enviar com confirmacao, recuperar) e constantes de calibracao, 102 testes, 40 mutacoes |
+| `8e6ba62` | Dia 6 P2: fecha as mutacoes do G6 (params do lote no recibo): 20 testes de lacunas, script de mutacoes com descoberta automatica, 19 mutacoes mortas |
+| `ab11bc5` | Dia 6: mensagem do dry-run sem backend mock (nada foi gasto), inspecao so de leitura de um job da IBM (fila, estimativa, deriva de calibracao), 53 testes, mutacoes 46 e 28 |
+| `2ce238c` | Dia 6: registro da calibracao na QPU real e pendencias em PROJECT.md e THREAT_MODEL.md (bloco acrescentado ao fim, sem editar secoes), 19 testes |
+| `dca8fb6` | R2: uso lido primeiro em qpu_charge_time_seconds (formato real da IBM), depois usage() e quantum_seconds; 122 testes, 49 mutacoes; T11 conferido em 2ce238c e no stage |
+| `80837a0` | R4: plano congelado da coleta 1 no PROJECT.md antes do primeiro envio (2 jobs x 9616 shots, reserva 20 s, 156 qubits, sessao coleta1), 18 testes |
+| `deac699` | R6: gate do Dia 6 atingido (3.000.192 bits reais, sessao coleta1, 2 jobs, 10 s de QPU); inventario em data/results e registro no PROJECT.md, 48 testes |
+| `c1d8210` | Dia 6 etapa 4: pipeline nos dados reais da coleta 1 vs simulador e os (script, 16 testes, 2 CSVs); QPU reprovada no monobit, H estimada 0,956-0,962; 2422 testes |
+| `863fb14` | Dia 6 etapa 4b: resumo da coleta 1 (frac1, correlacoes, zdiff) e excesso sobre o erro de leitura; script, 15 testes, 2 CSVs; 2437 testes |
+| `a3bfb8c` | Dia 6 etapa 5: E1 parcial registrado no PROJECT.md (gerado dos CSVs); jobs cal vs coleta 1 por qubit com conjunto fixo pre-registrado; viés de 14 e 138 presente em cal_002 e ausente em cal_001; intervalos entre lotes corrigidos (15 a 54 min, por criado_em); 2 scripts, 40 testes, 4 CSVs |
+| `e0f7225` | Dia 6: docstring do analisar_cal.py corrigido (intervalo entre lotes vem de criado_em) |
+| `700cddd` | Dia 6: script de estado (bloco no PROJECT.md e JSON para o proximo chat) e 23 testes |
+
+#### Resultados deste estágio (SHA-256 com fim de linha normalizado para LF)
+
+| Arquivo | SHA-256 |
+| --- | --- |
+| `dia6_coleta1_inventario.csv` | `16b4c2b5bd5ba94479c8b26b9a4830cfb0da82662adb939adaf68bacee37acf5` |
+| `dia6_deriva_dia_conjunto_fixo.csv` | `543627875f9bfa2c64d0c642ab338b6e9375e25e391b26d008836f439ad63e9e` |
+| `dia6_deriva_dia_estabilidade.csv` | `0051ad524090bf8a20563f2bce7118aabb03feb58693869d10a38f12de9638e2` |
+| `dia6_deriva_dia_lotes.csv` | `3078d678a7beb06409d8a804de88e3327ddf7b65276f146283d588ebe0bcdcf2` |
+| `dia6_deriva_dia_por_qubit.csv` | `fc4a986065fcbf1c07cc06c79a5860e967946ce1ac94b10b6af234878bbe1075` |
+| `dia6_qpu_excesso_leitura.csv` | `d3fe3fad35fa33c3fd50d5b861903dc9a56cb70c16cfbb7bf789b41c1f4f40a6` |
+| `dia6_qpu_vs_sim_lotes.csv` | `5023a1a6df5473f2be955d66681d732127f6d29714424d0060b9b13cefbb6e14` |
+| `dia6_qpu_vs_sim_por_qubit.csv` | `9af7321c7c7e5423a1e6337de05f29455f6c2a529962f5220f2177951df05895` |
+| `dia6_qpu_vs_sim_resumo.csv` | `dd6f7375d0947e8cd0030eddf9552330468964dcbee860d51a1a47e4790ef7ba` |
+
+A análise está no bloco `dia6-e1parcial`, logo acima.
+
+#### O que resta
+
+| Id | Pendência | Quando |
+| --- | --- | --- |
+| T11 | checagem de segredos (T11) sobre todos os commits da lista acima; o usuário ainda não confirmou a saída dela nos commits feitos nesta fase | antes de qualquer novo commit |
+| COLETA2 | coleta 2 em outro horário do dia, para medir deriva (seção 9.3): plano congelado no PROJECT.md antes do primeiro envio; só o usuário envia, com comando explícito e SIM | próxima etapa |
+| DEP_SESSAO | inventario_coleta1.py, analisar_coleta1.py e analisar_cal.py fixam a sessão coleta1 (e o prefixo coleta1_); parametrizar a sessão antes de analisar a coleta 2 (muda código: precisa de plano e aprovação) | antes de analisar a coleta 2 |
+| R8 | gravar o retrato da calibração da execução em cada lote; sem isso a deriva por tempo e por calibração não se separa (o registro da seção 18 diz que o cal_001 rodou sob uma calibração diferente da data gravada no lote) | antes da coleta 2 |
+| CRITERIO_REPLICA | o critério 'replica' (mesmo sinal e \|z\| > 2) é fraco: onde a magnitude é incompatível, relatar 'direção reproduzida, magnitude não' | ao escrever o relatório |
+| R11 | reorganizar as seções 6.12, 9.3, 9.4 e 17 do PROJECT.md com o conteúdo dos blocos acrescentados ao fim (dia6-e1parcial e dia6-estado incluídos) | antes de mudar o Status |
+| R12 | campo Status do PROJECT.md ainda diz Dia 5 de 9; atualizar depois do R11 | depois do R11 |
+| BACKUP_RESULTADOS | copiar data/results para C:\projeto\ancoras (os dados crus já têm cópia em coleta1_2026-11-01) | baixa |
+| COLETA3 | coleta 3 (deriva entre dias), seção 9.3: decisão do usuário; vem antes da coleta 2 na ordem de cortes da seção 16 | decidir antes do Dia 7 |
+| R7 | copiar data\logs\replay_history.json para C:\projeto\ancoras após o primeiro eal run real | depois do primeiro eal run real |
+| R9 | trocar SamplerV2 pelo executor_sampler.Sampler antes de qualquer atualização do pacote | baixa, versão fixada |
+| R10 | limpeza: texto 'disponível para um job' do status ignora o limite de 60 s; RuntimeJobNotFound aparece como erro inesperado; entrada de log do dry-run recusado | baixa |
+| T_TEMPO | test_noisy_million_bits_fast depende da velocidade da máquina; registrar como limitação na seção 17 | junto com o R11 |
+
+#### Próxima etapa
+
+Sessão de coleta 2 em outro horário do dia, para medir deriva (seção 9.3). Primeiro o plano congelado neste documento, sem enviar nada; o envio é só do usuário.
+
+<!-- dia6-estado:end -->
