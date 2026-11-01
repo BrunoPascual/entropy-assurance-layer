@@ -1137,3 +1137,135 @@ Gerado por `scripts/atualizar_docs_gate6.py` a partir de `data/results/dia6_cole
 - **Cópia dos dados crus:** `C:\projeto\ancoras\coleta1_2026-11-01`, com SHA-256 conferido arquivo a arquivo. `data/raw` não é versionado.
 - **Fica para depois:** reorganizar as seções 6.12, 9.3, 9.4 e 17 (R11), mudar o campo Status (R12) e analisar os dados no E1.
 <!-- dia6-gate:end -->
+
+<!-- dia6-e1parcial:start -->
+### E1 parcial (Dia 6): QPU real, simulador e fonte os; jobs cal
+
+Gerado por `scripts/atualizar_docs_e1parcial.py`. Todo número abaixo vem dos CSVs de `data/results` (SHA-256 com fim de linha normalizado para LF):
+
+- `dia6_qpu_vs_sim_lotes.csv`: `5023a1a6df5473f2be955d66681d732127f6d29714424d0060b9b13cefbb6e14`
+- `dia6_qpu_vs_sim_resumo.csv`: `dd6f7375d0947e8cd0030eddf9552330468964dcbee860d51a1a47e4790ef7ba`
+- `dia6_qpu_excesso_leitura.csv`: `d3fe3fad35fa33c3fd50d5b861903dc9a56cb70c16cfbb7bf789b41c1f4f40a6`
+- `dia6_qpu_vs_sim_por_qubit.csv`: `9af7321c7c7e5423a1e6337de05f29455f6c2a529962f5220f2177951df05895`
+- `dia6_deriva_dia_lotes.csv`: `3078d678a7beb06409d8a804de88e3327ddf7b65276f146283d588ebe0bcdcf2`
+- `dia6_deriva_dia_conjunto_fixo.csv`: `543627875f9bfa2c64d0c642ab338b6e9375e25e391b26d008836f439ad63e9e`
+- `dia6_deriva_dia_estabilidade.csv`: `0051ad524090bf8a20563f2bce7118aabb03feb58693869d10a38f12de9638e2`
+
+Entrada: 2 lotes por fonte, de 1500096 bits cada, da sessão `coleta1`. O simulador é o `qpu_sim` com ruído do FakeKingston; a fonte `os` tem o mesmo formato.
+
+#### Testes de saúde por lote
+
+Limiar de H estimada: 0,90 (seção 6.5, fixado antes dos dados reais e não ajustado).
+
+| Fonte | Lote | Aprovado | RCT, APT e replay | H estimada | H >= limiar | p monobit | p blocos | p runs | Bits extraídos | Rendimento |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| qpu_real (ibm_kingston) | 1 | não | ok | 0,9623 | sim | 2,91e-18 | 0,359 | 0 | 0 | 0,000 |
+| qpu_real (ibm_kingston) | 2 | não | ok | 0,9555 | sim | 6,62e-07 | 0,839 | 0 | 0 | 0,000 |
+| simulador (qpu_sim) | 1 | não | ok | 0,9592 | sim | 6,78e-17 | 0,699 | 0 | 0 | 0,000 |
+| simulador (qpu_sim) | 2 | não | ok | 0,9618 | sim | 7,29e-20 | 0,715 | 0 | 0 | 0,000 |
+| os (os) | 1 | sim | ok | 0,9695 | sim | 4,76e-01 | 0,742 | 9,37e-01 | 1359324 | 0,906 |
+| os (os) | 2 | sim | ok | 0,9665 | sim | 8,23e-02 | 0,029 | 7,40e-01 | 1354932 | 0,903 |
+
+- qpu_real lote 1 reprovado: monobit: p = 2.91e-18 (< 0.01); runs: p = 0 (< 0.01) (pré-teste de frequência falhou; p = 0 (SP 800-22 2.3.4))
+- qpu_real lote 2 reprovado: monobit: p = 6.62e-07 (< 0.01); runs: p = 0 (< 0.01) (pré-teste de frequência falhou; p = 0 (SP 800-22 2.3.4))
+- simulador lote 1 reprovado: monobit: p = 6.78e-17 (< 0.01); runs: p = 0 (< 0.01) (pré-teste de frequência falhou; p = 0 (SP 800-22 2.3.4))
+- simulador lote 2 reprovado: monobit: p = 7.29e-20 (< 0.01); runs: p = 0 (< 0.01) (pré-teste de frequência falhou; p = 0 (SP 800-22 2.3.4))
+
+O `p = 0` do teste de runs, quando aparece, vem do pré-teste de frequência que falhou (SP 800-22, 2.3.4); não é evidência independente do monobit.
+
+#### Viés, correlação e estabilidade entre os dois lotes da coleta 1
+
+156 qubits, 9616 shots por lote. Em cada célula de dois valores: lote 1 / lote 2. O z de p1 é em relação a 0,5.
+
+| Fonte | Fração de 1 | \|z\| máx. de p1 | Qubits com \|z\| > 3 | Correlação com o vizinho, \|z\| > 3 | Correlação com o shot seguinte, \|z\| > 3 | Desvio-padrão do zdiff | \|zdiff\| > 3 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| qpu_real | 0,4964 / 0,4980 | 33,1 / 36,1 | 28 / 27 | 3 / 2 | 1 / 0 | 1,14 | 3 |
+| simulador | 0,5034 / 0,5037 | 96,1 / 96,3 | 26 / 26 | 0 / 0 | 0 / 0 | 1,00 | 0 |
+| os | 0,5003 / 0,5007 | 2,9 / 3,5 | 0 / 1 | 0 / 0 | 0 / 0 | 1,04 | 0 |
+
+O zdiff compara o p1 de cada qubit entre os lotes 1 e 2; sem deriva e sem estrutura, o desvio-padrão esperado é perto de 1. As fontes `simulador` e `os` servem de controle.
+
+#### QPU real: desvio de 0,5 acima do erro de leitura do retrato
+
+- Lote 1: 5 de 156 qubits acima do limite (posições: 14, 21, 105, 138, 144).
+- Lote 2: 7 de 156 qubits acima do limite (posições: 14, 21, 87, 106, 135, 138, 142).
+- Acima do limite em todos os lotes: 14, 21, 138.
+- Esperado ao acaso, sem viés além do erro de leitura: cerca de 0,42 por lote.
+
+O limite é 3 erros-padrão de p1 (0,5 / raiz do número de shots) e o excesso é \|p1 - 0,5\| menos o erro de leitura do retrato gravado no envio.
+
+#### Correlação com a posição vizinha
+
+- qpu_real lote 1: pares acima do limite de Bonferroni (|z| > 3,60, 155 pares): 112-113 (z = -6,65).
+- qpu_real lote 2: pares acima do limite de Bonferroni (|z| > 3,60, 155 pares): 112-113 (z = -5,59).
+- simulador lote 1: pares acima do limite de Bonferroni (|z| > 3,60, 155 pares): nenhum.
+- simulador lote 2: pares acima do limite de Bonferroni (|z| > 3,60, 155 pares): nenhum.
+- os lote 1: pares acima do limite de Bonferroni (|z| > 3,60, 155 pares): nenhum.
+- os lote 2: pares acima do limite de Bonferroni (|z| > 3,60, 155 pares): nenhum.
+- QPU real, acima do limite em todos os lotes: 112-113.
+
+z = r vezes a raiz do número de shots (aproximação). "Vizinho" é a posição i + 1 do índice físico, não necessariamente um par acoplado no chip.
+
+#### Maior erro de leitura do retrato
+
+Posição 146: erro de leitura 0,4912 (lote 1: p1 = 0,5057, z = 1,12; lote 2: p1 = 0,4926, z = -1,45). Com erro de leitura perto de 0,5, a saída tende a não depender do estado preparado e pode parecer sem viés. Isso é inferência a partir do retrato gravado, não medida desta coleta, e mostra que teste de saída não certifica a origem (hipótese do E2).
+
+#### Jobs cal contra a coleta 1 (persistência dentro do dia)
+
+| Lote | criado_em (UTC) | Calibração no envio | Shots | Fração de 1 | Conferência |
+| --- | --- | --- | --- | --- | --- |
+| cal_001 | 2026-11-01T14:30:25Z | 2026-11-01 07:36:54-03:00 | 1000 | 0,4971 | batch_hash |
+| cal_002 | 2026-11-01T15:09:16Z | 2026-11-01 11:57:51-03:00 | 4000 | 0,4973 | batch_hash |
+| coleta1_001 | 2026-11-01T15:24:23Z | 2026-11-01 11:57:51-03:00 | 9616 | 0,4964 | inventario+batch_hash |
+| coleta1_002 | 2026-11-01T15:28:12Z | 2026-11-01 11:57:51-03:00 | 9616 | 0,4980 | inventario+batch_hash |
+
+Intervalos pelo campo `criado_em`, que é o momento em que o lote foi salvo, não o da execução na QPU: cal_001 → cal_002: 39 min; cal_002 → coleta1_001: 15 min; cal_001 → coleta1_001: 54 min.
+
+| Item | Grupo | Lote | Estimativa | z | z esperado | Testável | Replica | Magnitude compatível |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| par 112-113 | par_replicado_coleta1 | cal_001 | -0,0223 | -0,70 | 1,97 | não | — | — |
+| par 112-113 | par_replicado_coleta1 | cal_002 | -0,0473 | -2,99 | 3,95 | sim | sim | sim |
+| par 130-131 | par_replicado_coleta1 | cal_001 | -0,0712 | -2,25 | 1,07 | não | — | — |
+| par 130-131 | par_replicado_coleta1 | cal_002 | -0,0286 | -1,81 | 2,14 | não | — | — |
+| qubit 121 | controle_leitura | cal_001 | 0,3450 | -9,80 | 11,17 | sim | sim | sim |
+| qubit 121 | controle_leitura | cal_002 | 0,3232 | -22,36 | 22,34 | sim | sim | sim |
+| qubit 131 | controle_leitura | cal_001 | 0,5540 | 3,42 | 9,03 | sim | sim | não |
+| qubit 131 | controle_leitura | cal_002 | 0,6475 | 18,66 | 18,07 | sim | sim | sim |
+| qubit 138 | vies_alem_da_leitura | cal_001 | 0,4940 | -0,38 | 8,78 | sim | não | não |
+| qubit 138 | vies_alem_da_leitura | cal_002 | 0,3887 | -14,07 | 17,55 | sim | sim | não |
+| qubit 14 | vies_alem_da_leitura | cal_001 | 0,5070 | 0,44 | 9,29 | sim | não | não |
+| qubit 14 | vies_alem_da_leitura | cal_002 | 0,4035 | -12,21 | 18,59 | sim | sim | não |
+| qubit 21 | vies_alem_da_leitura | cal_001 | 0,5070 | 0,44 | 1,47 | não | — | — |
+| qubit 21 | vies_alem_da_leitura | cal_002 | 0,5220 | 2,78 | 2,95 | sim | sim | sim |
+
+- qubit 14: replica em cal_002; não replica em cal_001; não testável em nenhum lote.
+- qubit 21: replica em cal_002; não replica em nenhum lote; não testável em cal_001.
+- qubit 138: replica em cal_002; não replica em cal_001; não testável em nenhum lote.
+- qubit 121: replica em cal_001, cal_002; não replica em nenhum lote; não testável em nenhum lote.
+- qubit 131: replica em cal_001, cal_002; não replica em nenhum lote; não testável em nenhum lote.
+- par 112-113: replica em cal_002; não replica em nenhum lote; não testável em cal_001.
+- par 130-131: replica em nenhum lote; não replica em nenhum lote; não testável em cal_001, cal_002.
+
+Estabilidade do p1 dos qubits entre pares de lotes (zdiff, com shots diferentes):
+
+| Par de lotes | zdiff médio | Desvio-padrão do zdiff | \|zdiff\| > 3 | \|zdiff\| máx. |
+| --- | --- | --- | --- | --- |
+| cal_001 x cal_002 | -0,01 | 1,45 | 6 | 6,05 |
+| cal_001 x coleta1_001 | +0,05 | 1,62 | 5 | 10,33 |
+| cal_001 x coleta1_002 | -0,05 | 1,57 | 6 | 8,90 |
+| cal_002 x coleta1_001 | +0,10 | 1,26 | 2 | 6,76 |
+| cal_002 x coleta1_002 | -0,07 | 1,13 | 2 | 4,37 |
+| coleta1_001 x coleta1_002 | -0,21 | 1,14 | 3 | 4,36 |
+
+#### Limites desta análise
+
+- Uma sessão, num único dia, num único backend. O E1 completo pede sessões em outros horários e em outros dias (seção 9.3); nada aqui mede deriva entre dias.
+- O conjunto fixo e os critérios (testável, replica, magnitude compatível) estão como constantes em `scripts/analisar_cal.py` e foram fixados antes da leitura dos lotes cal, só com base na coleta 1. Uma das posições do conjunto fixo (112, do par 112-113) já tinha aparecido entre as colunas mais afastadas de 0,5 do `cal_001` no registro da seção 18; a correlação do par não tinha sido vista.
+- Os lotes cal não estão no inventário: a integridade deles é só o `batch_hash`. A coleta 1 é conferida também pelo SHA-256 do inventário.
+- O retrato de erro de leitura e a data de calibração gravados são os do envio, não os da execução (R8). Os quatro lotes têm o mesmo retrato de erro de leitura.
+- `criado_em` é o momento em que o lote foi salvo; os tempos de execução na QPU não estão nos dados e não entram nas conclusões.
+- O simulador usa a calibração congelada do FakeKingston, não a do dia da coleta; ele serve de referência qualitativa. O limiar de H estimada e os limiares dos testes de saúde não foram alterados.
+- Mais de um teste por qubit: os qubits e pares citados vêm de varreduras de 156 e 155 itens; só o que repete entre lotes independentes ou passa pelo limite de Bonferroni indicado tem peso.
+- Isto é um registro de medições. A causa do viés (leitura, porta, relaxação, calibração ou crosstalk) não foi determinada.
+
+<!-- dia6-e1parcial:end -->
