@@ -218,3 +218,9 @@ Se uma premissa cair, as garantias que dependem dela caem junto, e isso deve ser
 
 **O que não mudou.** Adversários, premissas e as demais garantias e não garantias. Replay transformado e replay deslocado continuam fora do alcance do detector. Lotes de execuções anteriores ao commit `e4b9f1d` não estão no histórico.
 <!-- revisao-v13:end -->
+
+## Anexo do Dia 6: observações de execução (não altera a versão do documento)
+Observado: a calibração da IBM mudou entre o envio e a execução de um job (07:36 para 11:09), sem mudança no erro de leitura medido. O risco de deriva entre envio e execução segue sem cobertura completa: o retrato gravado no envio pode não representar a execução. Mitigação atual: o inspetor compara os dois. Mitigação planejada, não implementada: gravar também o retrato da execução no lote.
+Observado: dry-run indisponível no Open Plan para o ibm_kingston. Não afeta a guarda de orçamento, que não depende do dry-run; perde-se apenas a validação prévia no servidor.
+Observado: a IBM devolve o uso em qpu_charge_time_seconds e em usage(); o código lê primeiro outra chave. Sem efeito de segurança hoje (os valores coincidem), mas é falha de contrato a corrigir.
+Confirmado: a mensagem de falha do dry-run não diz mais 'resultado incerto' (commit ab11bc5); o texto de envio real foi mantido.

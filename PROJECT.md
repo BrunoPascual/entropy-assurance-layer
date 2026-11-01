@@ -1081,3 +1081,18 @@ Feita por leitura do código, em partes, a partir do arquivo que o coletor gera 
 
 Confirme os links e as versões de API antes de depender deles; planos, preços e APIs mudam.
 
+
+## 18. Dia 6: calibração na QPU real e pendências (registro)
+Job de calibração: dbji1pgnceqs73ak2c8g, backend ibm_kingston, 156 qubits, 1000 shots, reserva de 20 s, SamplerV2 (qiskit 2.6.1, qiskit-ibm-runtime 0.51.0).
+Estado: DONE. Uso cobrado: 2 s de QPU (usage() e qpu_charge_time_seconds). Criado às 08:22 (horário de São Paulo) e já concluído na inspeção das 11:26.
+Conversão validada com resultado real: BitArray com 156 bits e 1000 shots; a conversão do adaptador é igual a to_bool_array(order='little'). 156000 bits uint8. Fração geral de 1: 0,4971.
+Colunas mais afastadas de 0,5 (posição, qubit físico, fração de 1): 121, 0,3450; 46, 0,4080; 112, 0,5740. Amostra de um job: não é conclusão sobre viés.
+Calibração: properties() no início da execução tem data 2026-11-01 11:09:06 (-03:00); o retrato gravado no envio tem 07:36:54 (-03:00). A data mudou, mas o erro de leitura dos 156 qubits não mudou (diferença máxima 0,00000). Não se sabe ainda qual propriedade mudou.
+Confirmado no ibm_kingston: 156 qubits operacionais; max_shots 100000; default_rep_delay 0,00025 s; erro de leitura (31/10/2026) mínimo 0,00134, mediana 0,00989, máximo 0,49451.
+Janela do orçamento: 28 dias rolantes (usage_period de 03/10 a 31/10 na sonda de 31/10). Limite do Open Plan: 600 s.
+Dry-run indisponível para o ibm_kingston no Open Plan (QiskitBackendNotFoundError: não há backend mock_). O custo real só se mede com job real. Mensagem de falha corrigida no commit ab11bc5.
+SamplerV2 obsoleto desde qiskit-ibm-runtime 0.50.0 (DeprecationWarning, remoção não antes de 3 meses após o lançamento). Versão fixada em 0.51.0; a troca para executor_sampler fica depois da coleta 1.
+Estimativa com um único ponto (limite superior, não medida): 2 milhões de bits cabem em um job de cerca de 12.821 shots com reserva de ~41 s; 3 milhões em cerca de 19.231 shots com reserva de ~60 s. Um segundo job de calibração confirma ou derruba isso.
+Pendências antes da coleta 1: (1) recuperar o job de calibração, que fecha a conta no log; (2) segundo job de calibração; (3) registrar aqui o plano congelado da coleta 1 antes do primeiro envio; (4) P1: copiar data/logs/replay_history.json após o primeiro eal run real; (5) gate do Dia 6 (2 a 3 milhões de bits reais salvos), ainda não avaliado.
+Limitação nova (seção 17): o adaptador lê o uso primeiro em metrics()['usage']['quantum_seconds'], chave que a IBM não devolveu neste job; a IBM expõe qpu_charge_time_seconds. A leitura caiu em usage(), que devolveu o mesmo valor. Corrigir antes da coleta 1.
+Limitações novas (seção 17), ainda não listadas: janela de queda entre a checagem do lote e a gravação (o lote fica consumido e não registrado); leituras de semente Toeplitz não passam pelo detector de replay (premissa P3); limite de 64 MiB do histórico de replay.
