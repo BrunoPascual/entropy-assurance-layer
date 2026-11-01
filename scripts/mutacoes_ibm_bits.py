@@ -10,6 +10,7 @@ Código de saída: 0 se todas morreram; 1 se alguma sobreviveu ou se uma âncora
 """
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -77,10 +78,21 @@ MUTATIONS: list[tuple[str, str, str]] = [
 
 
 def run_tests() -> bool:
-    """True se a suíte do módulo passa."""
-    done = subprocess.run([sys.executable, "-m", "pytest", "-q", "-x", TESTS],
-                          capture_output=True, text=True)
+    """True se a suíte do módulo passa.
+
+    Roda sem gravar bytecode: o Python valida o .pyc só por data (em segundos) e tamanho, e uma
+    mutação de mesmo tamanho feita no mesmo segundo da anterior reaproveitaria o bytecode errado.
+    """
+    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
+    done = subprocess.run([sys.executable, "-B", "-m", "pytest", "-q", "-x", TESTS],
+                          capture_output=True, text=True, env=env)
     return done.returncode == 0
+
+
+def drop_bytecode() -> None:
+    """Apaga o bytecode em cache do módulo, para a próxima importação recompilar o fonte."""
+    for pyc in MODULE.parent.glob(f"__pycache__/{MODULE.stem}.*.pyc"):
+        pyc.unlink(missing_ok=True)
 
 
 def apply(text: str, old: str, new: str) -> str:
@@ -116,6 +128,7 @@ def main() -> int:
                 survived.append(name)
     finally:
         MODULE.write_bytes(original)
+        drop_bytecode()
     ok = len(MUTATIONS) - len(survived) - len(anchors)
     print(f"\n{len(MUTATIONS)} mutações: {ok} mortas, {len(survived)} sobreviveram, "
           f"{len(anchors)} com âncora inválida.")
