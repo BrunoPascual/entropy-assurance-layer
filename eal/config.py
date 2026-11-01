@@ -21,6 +21,17 @@ MIN_LOCAL_SOURCES_EXPERIMENT = 1     # experiment: fonte local aprovada, simulad
 # --- Orçamento de QPU (segundos de execução no chip) ---
 QPU_TOTAL_BUDGET_SECONDS = 600  # 10 minutos por janela de 28 dias (confira no painel da IBM)
 
+# --- Dia 6: limite duro do orçamento de QPU (G7/T12) e acesso à IBM ---
+QPU_BUDGET_MARGIN_SECONDS = 30  # reserva que nunca é gasta (o consumo tem granularidade de 1 s)
+QPU_BUDGET_WINDOW_DAYS = 28  # janela móvel do plano Open (usage_period conferido em 31/10/2026)
+QPU_DAILY_CAP_SECONDS = 330  # teto das últimas 24 h (tabela 9.3: 5,5 min no Dia 6)
+QPU_MAX_JOB_RESERVE_SECONDS = 60  # maior max_execution_time aceito num job (rever após a calibração)
+QPU_MAX_SHOTS_PER_JOB = 100_000  # max_shots do ibm_kingston (backend.configuration(), 31/10/2026)
+QPU_USAGE_LOG_NAME = "qpu_usage.csv"  # em data/logs/, só com acréscimos
+IBM_DEFAULT_BACKEND = "ibm_kingston"
+IBM_DEFAULT_INSTANCE = "open-instance"
+IBM_TOKEN_ENV = "IBM_QUANTUM_TOKEN"  # nome da variável do .env; o valor nunca vai ao código
+
 # --- Dia 3: estimador de min-entropia (PROJECT.md 6.5) ---
 MCV_Z = 2.576          # quantil normal do limite superior de 99% (SP 800-90B 6.3.1)
 MCV_SYMBOL_BITS = 8    # tamanho do simbolo do segundo estimador
