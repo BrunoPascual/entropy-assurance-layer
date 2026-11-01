@@ -1366,3 +1366,82 @@ Registrado em 01/11/2026 sobre o commit e82e081. Nenhum parâmetro abaixo muda d
   - cada comparação registra se a calibração da execução é a mesma da coleta 1 ou não.
 - **Análise:** só depois da parametrização da sessão nos scripts de análise (DEP_SESSAO).
 <!-- coleta2-plano:end -->
+
+<!-- dia6-coleta2:start -->
+### Coleta 2 e deriva no mesmo dia (Dia 6, registro gerado dos CSVs)
+
+Gerado por `scripts/registrar_deriva_coleta2.py` a partir dos CSVs listados no fim deste bloco. Nenhum número foi digitado à mão. Os critérios são os do plano congelado da coleta 2, registrado antes do primeiro envio.
+
+**Lotes da coleta 2 (inventário):** 2 lotes, 3.000.192 bits, 10 s de QPU.
+
+| Arquivo | Job | Bits | Uso (s) |
+|---|---|---|---|
+| 2026-11-01_ibm_kingston_coleta2_001.json | dbjq01pffo6c73ba4lo0 | 1.500.096 | 5 |
+| 2026-11-01_ibm_kingston_coleta2_002.json | dbjq4ehkdqps73912u30 | 1.500.096 | 5 |
+
+**Saúde por lote (mesmo pipeline da coleta 1, limiar 0,9):**
+
+| Fonte | Lote | Aprovado | H estimada | Bits extraídos |
+|---|---|---|---|---|
+| qpu_real | 1 | não | 0,959769 | 0 |
+| qpu_real | 2 | não | 0,955301 | 0 |
+| simulador | 1 | não | 0,959153 | 0 |
+| simulador | 2 | não | 0,961837 | 0 |
+| os | 1 | sim | 0,966476 | 1.354.932 |
+| os | 2 | sim | 0,966476 | 1.354.932 |
+
+**Calibração e fração de 1 por lote:**
+
+| Lote | Sessão | Calibração em vigor | Retrato de leitura | Igual à coleta 1 | Fração de 1 |
+|---|---|---|---|---|---|
+| coleta1_001 | coleta1 | 2026-11-01 11:57:51-03:00 | envio | sim | 0,4964 |
+| coleta1_002 | coleta1 | 2026-11-01 11:57:51-03:00 | envio | sim | 0,4980 |
+| coleta2_001 | coleta2 | 2026-11-01 16:56:51-03:00 | execucao | não | 0,5025 |
+| coleta2_002 | coleta2 | 2026-11-01 16:56:51-03:00 | execucao | não | 0,5011 |
+
+**Conjunto fixo, coleta 2 contra a coleta 1:**
+
+| Item | Grupo | Lote | Estimativa | z | z esperado | Resultado |
+|---|---|---|---|---|---|---|
+| qubit 14 | vies_alem_da_leitura | coleta2_001 | 0,5017 | 0,33 | 28,82 | não replica |
+| qubit 14 | vies_alem_da_leitura | coleta2_002 | 0,4997 | -0,06 | 28,82 | não replica |
+| qubit 21 | vies_alem_da_leitura | coleta2_001 | 0,5232 | 4,55 | 4,57 | replica |
+| qubit 21 | vies_alem_da_leitura | coleta2_002 | 0,5236 | 4,63 | 4,57 | replica |
+| qubit 138 | vies_alem_da_leitura | coleta2_001 | 0,4875 | -2,45 | 27,22 | direção reproduzida, magnitude não |
+| qubit 138 | vies_alem_da_leitura | coleta2_002 | 0,4844 | -3,06 | 27,22 | direção reproduzida, magnitude não |
+| qubit 121 | controle_leitura | coleta2_001 | 0,3514 | -29,15 | 34,63 | direção reproduzida, magnitude não |
+| qubit 121 | controle_leitura | coleta2_002 | 0,3481 | -29,80 | 34,63 | direção reproduzida, magnitude não |
+| qubit 131 | controle_leitura | coleta2_001 | 0,6856 | 36,41 | 28,01 | direção reproduzida, magnitude não |
+| qubit 131 | controle_leitura | coleta2_002 | 0,6736 | 34,04 | 28,01 | direção reproduzida, magnitude não |
+| par 112-113 | par_replicado_coleta1 | coleta2_001 | -0,0726 | -7,12 | 6,12 | replica |
+| par 112-113 | par_replicado_coleta1 | coleta2_002 | -0,0742 | -7,28 | 6,12 | replica |
+| par 130-131 | par_replicado_coleta1 | coleta2_001 | -0,0528 | -5,18 | 3,32 | replica |
+| par 130-131 | par_replicado_coleta1 | coleta2_002 | -0,0396 | -3,88 | 3,32 | replica |
+
+Contagem: direção reproduzida, magnitude não: 6; não replica: 2; replica: 6.
+
+**Estabilidade entre pares de lotes (zdiff dos qubits):**
+
+| Lote A | Lote B | Média | Desvio-padrão | Qubits acima de 3 |
+|---|---|---|---|---|
+| coleta1_001 | coleta1_002 | -0,212 | 1,145 | 3 |
+| coleta1_001 | coleta2_001 | -0,845 | 3,274 | 12 |
+| coleta1_001 | coleta2_002 | -0,649 | 3,377 | 9 |
+| coleta1_002 | coleta2_001 | -0,633 | 3,111 | 10 |
+| coleta1_002 | coleta2_002 | -0,437 | 3,313 | 11 |
+| coleta2_001 | coleta2_002 | 0,196 | 1,133 | 2 |
+
+**Limites:**
+
+- A coleta 2 rodou sob outra calibração (2026-11-01 16:56:51-03:00) que a coleta 1 (2026-11-01 11:57:51-03:00). A diferença entre as coletas mistura o tempo decorrido e a troca de calibração, e estes dados não separam os dois.
+- O critério de réplica (mesmo sinal e |z| > 2) é fraco; por isso a magnitude é relatada à parte.
+- Isto é um registro de medições. A causa de qualquer diferença (leitura, porta, relaxação, calibração ou outra) não é afirmada aqui.
+
+**CSVs (SHA-256 dos bytes em disco):**
+
+- `dia6_coleta2_inventario.csv`: `d2d1fc799f0f1360e910c21cd9899ab188cb673d8fb76702e78291a015be1901`
+- `dia6_coleta2_qpu_vs_sim_lotes.csv`: `0a30e43ae33ad62b8cbef7cea034beb3c0199c95beebab3ba3a23c7e36930edf`
+- `dia6_deriva_coleta2_conjunto_fixo.csv`: `6f823feef65d7b593a99f4e723f5a0150e88beaedbb93bd4475b0f09c74a4032`
+- `dia6_deriva_coleta2_estabilidade.csv`: `efdba5aedc83b95ba23a88135415facadd3a2f5697fb5537b62270d813fc5b99`
+- `dia6_deriva_coleta2_lotes.csv`: `24d3ba1bd8b02b6d1b775baee773260e7f6bfc06589c7fdd01af0cf78ffb628b`
+<!-- dia6-coleta2:end -->
