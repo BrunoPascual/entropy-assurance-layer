@@ -21,7 +21,7 @@ Critérios, fixados antes da leitura:
   - magnitude compatível: testável e |estimativa - referência| <= 3 erros-padrão da diferença.
 Erro-padrão de p1: 0,5 / sqrt(shots). De r: 1 / sqrt(shots) (aproximação).
 
-Limites: os ``cal`` são de 30 a 55 minutos antes da coleta 1 (persistência dentro do dia, não
+Limites: os ``cal`` são do mesmo dia e foram salvos antes da coleta 1 (persistência dentro do dia, não
 entre dias); o retrato de calibração gravado é o do envio, não o da execução (R8); "vizinho" é a
 posição i+1, não necessariamente um par acoplado no chip.
 
