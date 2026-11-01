@@ -22,6 +22,11 @@ Saídas (não sobrescreve; recusa se qualquer uma já existir):
 
 Uso (na raiz do projeto):
     py -3.12 scripts\\analisar_coleta1.py
+    py -3.12 scripts\\analisar_coleta1.py --sessao coleta2
+Com ``--sessao`` diferente de ``coleta1``, o inventário padrão é
+``data/results/dia6_<sessao>_inventario.csv`` e as saídas ganham o prefixo ``dia6_<sessao>_``.
+Na QPU real, o erro de leitura é o retrato da execução (R8) quando o lote o tem; senão, o do
+envio.
 Código de saída: 0 gravado; 1 recusado ou erro (nada foi gravado); 2 erro de uso.
 """
 from __future__ import annotations
@@ -32,6 +37,7 @@ import hashlib
 import io
 import math
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Any, Callable
@@ -54,6 +60,7 @@ INVENTORY_PATH = Path("data/results/dia6_coleta1_inventario.csv")
 OUT_DIR = Path("data/results")
 LOTS_NAME = "dia6_qpu_vs_sim_lotes.csv"
 QUBIT_NAME = "dia6_qpu_vs_sim_por_qubit.csv"
+SESSION_RE = re.compile(r"[A-Za-z0-9]+")
 SIM_SEED = 12345
 SIM_NOISE = "FakeKingston"
 REAL, SIM, OS = "qpu_real", "simulador", "os"
@@ -66,6 +73,31 @@ class AnalysisError(Exception):
 
 def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def check_session(session: str) -> str:
+    """Só letras e dígitos: entra num glob e em nomes de arquivo, e ``_`` separa o rótulo."""
+    if not isinstance(session, str) or not SESSION_RE.fullmatch(session):
+        raise AnalysisError(f"sessão inválida: {session!r}")
+    return session
+
+
+def session_file(name: str, session: str) -> str:
+    """``coleta1`` mantém o nome de sempre; outra sessão ganha o prefixo ``dia6_<sessao>_``."""
+    if session == SESSION:
+        return name
+    return name.replace("dia6_", f"dia6_{session}_", 1)
+
+
+def inventory_for(session: str) -> Path:
+    """Inventário de uma sessão (o mesmo nome que ``inventario_coleta1.py --sessao`` grava)."""
+    return Path(f"data/results/dia6_{session}_inventario.csv")
+
+
+def readout_of(params: dict[str, Any]) -> Any:
+    """Erro de leitura por posição: o da execução (R8) se o lote tiver; senão, o do envio."""
+    run = params.get("readout_error_run_by_position")
+    return run if run is not None else params.get("readout_error_by_position")
 
 
 # ---------------------------------------------------------------- carga e conferência
@@ -223,21 +255,23 @@ def csv_text(rows: list[dict[str, Any]]) -> str:
     return buf.getvalue()
 
 
-def _targets(out_dir: Path) -> list[Path]:
-    return [out_dir / LOTS_NAME, out_dir / QUBIT_NAME]
+def _targets(out_dir: Path, session: str = SESSION) -> list[Path]:
+    return [out_dir / session_file(LOTS_NAME, session),
+            out_dir / session_file(QUBIT_NAME, session)]
 
 
-def check_targets(out_dir: Path) -> None:
-    for t in _targets(out_dir):
+def check_targets(out_dir: Path, session: str = SESSION) -> None:
+    for t in _targets(out_dir, session):
         if t.exists() or t.with_name(t.name + ".tmp").exists():
             raise AnalysisError(f"já existe, não sobrescrevo: {t}")
 
 
-def write_outputs(out_dir: Path, lots_text: str, qubit_text: str) -> list[Path]:
+def write_outputs(out_dir: Path, lots_text: str, qubit_text: str,
+                  session: str = SESSION) -> list[Path]:
     """Grava os dois CSVs, tudo ou nada (temporário e depois o nome final)."""
-    check_targets(out_dir)
+    check_targets(out_dir, session)
     out_dir.mkdir(parents=True, exist_ok=True)
-    targets = _targets(out_dir)
+    targets = _targets(out_dir, session)
     tmps = [t.with_name(t.name + ".tmp") for t in targets]
     try:
         for tmp, text in zip(tmps, (lots_text, qubit_text)):
@@ -309,7 +343,7 @@ def analyze_source(label: str, batches: list[Any], *, physical: list[int], use_r
         row.update(_pipeline_columns(b, seed_source, pipeline_fn))
         lot_rows.append(row)
         m = qubit_metrics(b.bits, n_qubits)
-        readout = b.params.get("readout_error_by_position") if use_readout else None
+        readout = readout_of(b.params) if use_readout else None
         for pos in range(n_qubits):
             err = readout[pos] if readout else None
             qubit_rows.append({
@@ -328,11 +362,13 @@ def _default_sim(n_qubits: int, seed: int, physical: list[int]) -> Any:
 
 def run(raw_dir: Path, inventory: Path, out_dir: Path, sim_seed: int, *,
         sim_factory: Callable[..., Any] | None = None,
-        os_factory: Callable[[], Any] | None = None) -> list[dict[str, Any]]:
+        os_factory: Callable[[], Any] | None = None,
+        session: str = SESSION) -> list[dict[str, Any]]:
+    session = check_session(session)
     sim_factory = sim_factory or _default_sim
     os_factory = os_factory or OsSource
-    check_targets(out_dir)  # falha cedo, antes de simular
-    real = load_real(raw_dir, inventory)
+    check_targets(out_dir, session)  # falha cedo, antes de simular
+    real = load_real(raw_dir, inventory, session)
     physical = [int(q) for q in real[0].params["physical_qubits"]]
     n_qubits, n_bits = int(real[0].params["qubits"]), real[0].n_bits
     sim = sim_factory(n_qubits, sim_seed, physical)
@@ -352,7 +388,7 @@ def run(raw_dir: Path, inventory: Path, out_dir: Path, sim_seed: int, *,
         lots += lr
         qubits += qr
     lots_text, qubit_text = csv_text(lots), csv_text(qubits)
-    paths = write_outputs(out_dir, lots_text, qubit_text)
+    paths = write_outputs(out_dir, lots_text, qubit_text, session)
     print(f"gravado: {paths[0]} ({len(lots)} linhas)")
     print(f"gravado: {paths[1]} ({len(qubits)} linhas)")
     return lots
@@ -362,13 +398,16 @@ def main(argv: list[str] | None = None, *, sim_factory: Callable[..., Any] | Non
          os_factory: Callable[[], Any] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Dia 6: coleta 1 vs simulador vs os (só leitura)")
     ap.add_argument("--raw-dir", type=Path, default=RAW_DIR)
-    ap.add_argument("--inventario", type=Path, default=INVENTORY_PATH)
+    ap.add_argument("--sessao", default=SESSION)
+    ap.add_argument("--inventario", type=Path, default=None)
     ap.add_argument("--out-dir", type=Path, default=OUT_DIR)
     ap.add_argument("--sim-seed", type=int, default=SIM_SEED)
     args = ap.parse_args(argv)
     try:
-        lots = run(args.raw_dir, args.inventario, args.out_dir, args.sim_seed,
-                   sim_factory=sim_factory, os_factory=os_factory)
+        session = check_session(args.sessao)
+        inventory = args.inventario or inventory_for(session)
+        lots = run(args.raw_dir, inventory, args.out_dir, args.sim_seed,
+                   sim_factory=sim_factory, os_factory=os_factory, session=session)
     except AnalysisError as exc:
         print(f"RECUSADO: {exc}")
         return 1

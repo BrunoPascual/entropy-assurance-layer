@@ -21,6 +21,9 @@ Saída diferente da existente: recusa, sem gravar nenhum dos dois.
 
 Uso (na raiz do projeto):
     py -3.12 scripts\\resumo_coleta1.py
+    py -3.12 scripts\\resumo_coleta1.py --sessao coleta2
+Com ``--sessao`` diferente de ``coleta1``, a entrada padrão e as saídas ganham o prefixo
+``dia6_<sessao>_`` (os mesmos nomes que ``analisar_coleta1.py --sessao`` grava).
 Código de saída: 0 gravado ou já igual; 1 recusado; 2 erro de uso.
 """
 from __future__ import annotations
@@ -30,6 +33,7 @@ import csv
 import io
 import math
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -38,6 +42,8 @@ IN_PATH = Path("data/results/dia6_qpu_vs_sim_por_qubit.csv")
 OUT_DIR = Path("data/results")
 RESUMO_NAME = "dia6_qpu_vs_sim_resumo.csv"
 EXCESSO_NAME = "dia6_qpu_excesso_leitura.csv"
+SESSION = "coleta1"
+SESSION_RE = re.compile(r"[A-Za-z0-9]+")
 REAL = "qpu_real"
 LOTS = ("1", "2")
 Z_LIMIT = 3.0
@@ -47,6 +53,25 @@ COLUMNS_IN = ("fonte", "lote", "posicao", "qubit_fisico", "n_shots", "p1",
 
 class SummaryError(Exception):
     """Recusa: nada foi gravado."""
+
+
+def check_session(session: str) -> str:
+    """Só letras e dígitos: entra em nomes de arquivo, e ``_`` separa o rótulo."""
+    if not isinstance(session, str) or not SESSION_RE.fullmatch(session):
+        raise SummaryError(f"sessão inválida: {session!r}")
+    return session
+
+
+def session_file(name: str, session: str) -> str:
+    """``coleta1`` mantém o nome de sempre; outra sessão ganha o prefixo ``dia6_<sessao>_``."""
+    if session == SESSION:
+        return name
+    return name.replace("dia6_", f"dia6_{session}_", 1)
+
+
+def input_for(session: str) -> Path:
+    """CSV por qubit que ``analisar_coleta1.py --sessao`` grava para a sessão."""
+    return IN_PATH.with_name(session_file(IN_PATH.name, session))
 
 
 # ---------------------------------------------------------------- leitura
@@ -250,12 +275,15 @@ def build(path: Path) -> tuple[str, str, list[dict[str, Any]]]:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Dia 6: resumo QPU x simulador x os")
-    ap.add_argument("--entrada", type=Path, default=IN_PATH)
+    ap.add_argument("--sessao", default=SESSION)
+    ap.add_argument("--entrada", type=Path, default=None)
     ap.add_argument("--out-dir", type=Path, default=OUT_DIR)
     args = ap.parse_args(argv)
     try:
-        resumo, excesso, summary = build(args.entrada)
-        targets = [(args.out_dir / RESUMO_NAME, resumo), (args.out_dir / EXCESSO_NAME, excesso)]
+        session = check_session(args.sessao)
+        resumo, excesso, summary = build(args.entrada or input_for(session))
+        targets = [(args.out_dir / session_file(RESUMO_NAME, session), resumo),
+                   (args.out_dir / session_file(EXCESSO_NAME, session), excesso)]
         states = write_deterministic(targets)
     except SummaryError as exc:
         print(f"RECUSADO: {exc}")
