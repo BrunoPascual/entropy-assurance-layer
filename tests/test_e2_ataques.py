@@ -109,16 +109,16 @@ def test_grade_pre_registrada():
     )
     assert e2.STUCK_EVERY == 1024
     assert e2.TAMANHOS == (1_000_000, 4_000_000)
-    assert e2.REPS == {1_000_000: 20, 4_000_000: 10}
-    assert e2.REPS_OS == {1_000_000: 200, 4_000_000: 50}
+    assert e2.REPS == {1_000_000: 200, 4_000_000: 100}
+    assert e2.REPS_OS == {1_000_000: 2000, 4_000_000: 500}
 
 
-def test_total_de_lotes_790():
-    assert sum(c.n_lotes for c in e2.celulas()) == 790
+def test_total_de_lotes_7900():
+    assert sum(c.n_lotes for c in e2.celulas()) == 7900
     por_n = {}
     for c in e2.celulas():
         por_n[c.n_bits] = por_n.get(c.n_bits, 0) + c.n_lotes
-    assert por_n == {1_000_000: 560, 4_000_000: 230}
+    assert por_n == {1_000_000: 5600, 4_000_000: 2300}
 
 
 def test_medir_tempo_usa_2_por_celula_e_mesmas_celulas():
@@ -314,10 +314,10 @@ def test_rodar_grava_os_dois_csvs(tmp_path):
     assert codigo == 0, saida
     pasta = tmp_path / "data" / "results"
     lotes = e2.ler_lotes(pasta / "e2_lotes.csv")
-    assert len(lotes) == 790
+    assert len(lotes) == 7900
     with (pasta / "e2_resumo.csv").open(encoding="utf-8", newline="") as f:
         resumo = list(csv.DictReader(f))
-    assert sum(int(r["n_lotes"]) for r in resumo) == 790
+    assert sum(int(r["n_lotes"]) for r in resumo) == 7900
     assert len(resumo) == 2 * (5 + 5 + 5 + 1 + 2 + 1)
     for nome in ("e2_lotes.csv", "e2_resumo.csv"):
         dados = (pasta / nome).read_bytes()
@@ -384,7 +384,7 @@ def test_medir_tempo_nao_grava_nem_mostra_veredito(tmp_path):
     assert codigo == 0
     assert not (tmp_path / "data").exists()
     texto = "\n".join(saida).lower()
-    assert "790 lotes" in texto
+    assert "7900 lotes" in texto
     for proibido in ("approved", "reprov", "aprov", "true", "false", "taxa"):
         assert proibido not in texto
     assert len(FakeSource.criadas) == sum(c.reps for c in e2.celulas_medir_tempo())
