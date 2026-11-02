@@ -1533,3 +1533,27 @@ Referência (conta, não medição): 3 testes estatísticos independentes com p 
 - `e2_lotes.csv`: `f6d7cc87d3fa3fde9b7691307daa4a299628784fabd65ec4fc961510c94ad90a`
 - `e2_resumo.csv`: `2fd202e9b3cc0dccf1dd52a6212de0f6296fb6d3e067ddff68a92e1a0de62a0c`
 <!-- dia7-e2:end -->
+
+<!-- coleta3-plano:start -->
+### Plano congelado da coleta 3 (Dia 7, registrado antes do primeiro envio)
+
+Registrado em 02/11/2026 sobre o commit 01666ec. Nenhum parâmetro abaixo muda depois do primeiro envio da coleta 3 (seção 6.5).
+
+- **Objetivo:** medir a deriva entre dias (seção 9.3).
+- **Backend, qubits, circuito e `rep_delay`:** iguais aos das coletas 1 e 2 (ibm_kingston; os 156 operacionais, sem exclusão; `hadamard_all_measure` com SamplerV2; 0,00025 s).
+- **Sessão:** `coleta3`.
+- **Jobs:** 2, enviados um de cada vez. O segundo só é enviado depois que o primeiro for recuperado e inspecionado.
+- **Shots por job:** 9.616, o que dá 1.500.096 bits por job e 3.000.192 no total.
+- **Reserva por job:** 20 s.
+- **Horário:** o primeiro envio acontece entre 17:00 e 20:00 (-03:00) de 02/11/2026: o dia seguinte ao das coletas 1 e 2, na mesma faixa horária da coleta 2. Se o primeiro envio não acontecer nessa janela, este plano não vale e é refeito.
+- **Custo:** as coletas 1 e 2 usaram 5 s por job. Saldo depois da coleta 2: 573 s; o saldo é conferido de novo com `coletar_ibm.py status` antes do primeiro envio.
+- **Calibração:** cada lote grava o retrato do envio (`calibration_date`, `readout_error_by_position`) e o da execução (`calibration_date_run`, `readout_error_run_by_position`, R8).
+- **Critérios de parada e o que não é critério de parada:** iguais aos das coletas 1 e 2, inclusive parar se o primeiro job usar mais de 15 s. Ao parar: documentar e não reenviar sem uma nova decisão registrada aqui.
+- **Critérios de análise, fixados antes de ver os dados:**
+  - saúde e H estimada por lote, pelo mesmo pipeline das coletas 1 e 2, com limiar 0,9;
+  - conjunto fixo: viés além da leitura nos qubits 14, 21 e 138; controles 121 e 131; pares 112-113 e 130-131. Nenhum item entra ou sai depois de ver a coleta 3;
+  - análise principal: contra a coleta 1, com `analisar_deriva.py --sessao coleta3`. Réplica: mesmo sinal e |z| > 2; onde a direção se reproduz e a magnitude não (`magnitude_compativel`), o resultado é "direção reproduzida, magnitude não". Esta comparação mistura o dia com a hora do dia (coleta 1 perto do meio-dia, coleta 3 depois das 17:00), e o registro diz isso;
+  - análise secundária, opcional: contra a coleta 2 (mesma faixa horária, dia seguinte), com o mesmo conjunto fixo e a mesma regra de réplica, só se o `analisar_deriva.py` ganhar um parâmetro de referência, com testes. Se não for feita, o registro diz que não foi feita;
+  - cada comparação registra se a calibração da execução é a mesma da referência ou não.
+- **Análise:** com os comandos que já aceitam `--sessao` (inventário, saúde, resumo e deriva).
+<!-- coleta3-plano:end -->
