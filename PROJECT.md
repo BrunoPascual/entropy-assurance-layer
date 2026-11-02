@@ -1445,3 +1445,91 @@ Contagem: direção reproduzida, magnitude não: 6; não replica: 2; replica: 6.
 - `dia6_deriva_coleta2_estabilidade.csv`: `efdba5aedc83b95ba23a88135415facadd3a2f5697fb5537b62270d813fc5b99`
 - `dia6_deriva_coleta2_lotes.csv`: `24d3ba1bd8b02b6d1b775baee773260e7f6bfc06589c7fdd01af0cf78ffb628b`
 <!-- dia6-coleta2:end -->
+
+<!-- dia7-e2:start -->
+### E2, ataques: taxa de detecção e falsos positivos (Dia 7, registro gerado dos CSVs)
+
+Gerado por `scripts/registrar_e2.py` a partir de `e2_lotes.csv` e `e2_resumo.csv`. Nenhum número foi digitado à mão. As frases da seção de leitura só são gravadas se cada uma for confirmada pelos CSVs; o script recusa se alguma falhar.
+
+**Protocolo (pré-registrado):** rodada sobre o commit `f5b35166ff9550357d0dc30cc14c4ed7fd975130`, conferido na coluna `commit` das 7.900 linhas. 36 células, lotes de 1.000.000 e 4.000.000 bits. Cada lote usa uma instância nova da fonte, semente própria gravada e um detector de replay novo; no replay, as duas leituras de cada par vêm da mesma instância. Detecção é o lote com `approved` falso; no replay só a 2ª leitura conta, e a 1ª entra como referência. Falso positivo é um lote da `os` reprovado. IC 95% de Clopper-Pearson.
+
+**Resultados por célula** (RCT, APT, Replay, H e Estat. contam os lotes em que o respectivo teste falhou; um lote pode falhar em mais de um):
+
+| Grupo | Fonte | Valor | Bits | Reprovados | Lotes | Taxa | IC 95% | RCT | APT | Replay | H | Estat. |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| detecção | faulty_biased | 0,501 | 1.000.000 | 60 | 200 | 0,3000 | 0,2374 a 0,3686 | 0 | 0 | 0 | 0 | 60 |
+| detecção | faulty_biased | 0,502 | 1.000.000 | 185 | 200 | 0,9250 | 0,8793 a 0,9574 | 0 | 0 | 0 | 0 | 185 |
+| detecção | faulty_biased | 0,505 | 1.000.000 | 200 | 200 | 1,0000 | 0,9817 a 1,0000 | 0 | 1 | 0 | 0 | 200 |
+| detecção | faulty_biased | 0,51 | 1.000.000 | 200 | 200 | 1,0000 | 0,9817 a 1,0000 | 0 | 2 | 0 | 0 | 200 |
+| detecção | faulty_biased | 0,55 | 1.000.000 | 200 | 200 | 1,0000 | 0,9817 a 1,0000 | 0 | 200 | 0 | 200 | 200 |
+| detecção | faulty_correlated | 0,501 | 1.000.000 | 64 | 200 | 0,3200 | 0,2560 a 0,3895 | 0 | 1 | 0 | 0 | 63 |
+| detecção | faulty_correlated | 0,502 | 1.000.000 | 184 | 200 | 0,9200 | 0,8733 a 0,9536 | 0 | 0 | 0 | 0 | 184 |
+| detecção | faulty_correlated | 0,505 | 1.000.000 | 200 | 200 | 1,0000 | 0,9817 a 1,0000 | 0 | 1 | 0 | 0 | 200 |
+| detecção | faulty_correlated | 0,51 | 1.000.000 | 200 | 200 | 1,0000 | 0,9817 a 1,0000 | 0 | 1 | 0 | 0 | 200 |
+| detecção | faulty_correlated | 0,6 | 1.000.000 | 200 | 200 | 1,0000 | 0,9817 a 1,0000 | 0 | 10 | 0 | 200 | 200 |
+| detecção | faulty_stuck | 8 | 1.000.000 | 200 | 200 | 1,0000 | 0,9817 a 1,0000 | 0 | 0 | 0 | 0 | 200 |
+| detecção | faulty_stuck | 16 | 1.000.000 | 200 | 200 | 1,0000 | 0,9817 a 1,0000 | 0 | 2 | 0 | 200 | 200 |
+| detecção | faulty_stuck | 24 | 1.000.000 | 200 | 200 | 1,0000 | 0,9817 a 1,0000 | 13 | 5 | 0 | 200 | 200 |
+| detecção | faulty_stuck | 32 | 1.000.000 | 200 | 200 | 1,0000 | 0,9817 a 1,0000 | 200 | 9 | 0 | 200 | 200 |
+| detecção | faulty_stuck | 64 | 1.000.000 | 200 | 200 | 1,0000 | 0,9817 a 1,0000 | 200 | 126 | 0 | 200 | 200 |
+| detecção | faulty_prng | - | 1.000.000 | 6 | 200 | 0,0300 | 0,0111 a 0,0642 | 0 | 0 | 0 | 0 | 6 |
+| referência (1ª leitura) | faulty_replay | - | 1.000.000 | 4 | 200 | 0,0200 | 0,0055 a 0,0504 | 0 | 0 | 0 | 0 | 4 |
+| detecção (2ª leitura) | faulty_replay | - | 1.000.000 | 200 | 200 | 1,0000 | 0,9817 a 1,0000 | 0 | 0 | 200 | 0 | 4 |
+| falso positivo | os | - | 1.000.000 | 52 | 2.000 | 0,0260 | 0,0195 a 0,0340 | 0 | 0 | 0 | 0 | 52 |
+| detecção | faulty_biased | 0,501 | 4.000.000 | 95 | 100 | 0,9500 | 0,8872 a 0,9836 | 0 | 0 | 0 | 0 | 95 |
+| detecção | faulty_biased | 0,502 | 4.000.000 | 100 | 100 | 1,0000 | 0,9638 a 1,0000 | 0 | 1 | 0 | 0 | 100 |
+| detecção | faulty_biased | 0,505 | 4.000.000 | 100 | 100 | 1,0000 | 0,9638 a 1,0000 | 0 | 0 | 0 | 0 | 100 |
+| detecção | faulty_biased | 0,51 | 4.000.000 | 100 | 100 | 1,0000 | 0,9638 a 1,0000 | 0 | 0 | 0 | 0 | 100 |
+| detecção | faulty_biased | 0,55 | 4.000.000 | 100 | 100 | 1,0000 | 0,9638 a 1,0000 | 0 | 100 | 0 | 100 | 100 |
+| detecção | faulty_correlated | 0,501 | 4.000.000 | 89 | 100 | 0,8900 | 0,8117 a 0,9438 | 0 | 2 | 0 | 0 | 89 |
+| detecção | faulty_correlated | 0,502 | 4.000.000 | 100 | 100 | 1,0000 | 0,9638 a 1,0000 | 0 | 0 | 0 | 0 | 100 |
+| detecção | faulty_correlated | 0,505 | 4.000.000 | 100 | 100 | 1,0000 | 0,9638 a 1,0000 | 0 | 0 | 0 | 0 | 100 |
+| detecção | faulty_correlated | 0,51 | 4.000.000 | 100 | 100 | 1,0000 | 0,9638 a 1,0000 | 0 | 1 | 0 | 0 | 100 |
+| detecção | faulty_correlated | 0,6 | 4.000.000 | 100 | 100 | 1,0000 | 0,9638 a 1,0000 | 0 | 19 | 0 | 100 | 100 |
+| detecção | faulty_stuck | 8 | 4.000.000 | 100 | 100 | 1,0000 | 0,9638 a 1,0000 | 0 | 0 | 0 | 0 | 100 |
+| detecção | faulty_stuck | 16 | 4.000.000 | 100 | 100 | 1,0000 | 0,9638 a 1,0000 | 0 | 3 | 0 | 100 | 100 |
+| detecção | faulty_stuck | 24 | 4.000.000 | 100 | 100 | 1,0000 | 0,9638 a 1,0000 | 24 | 2 | 0 | 100 | 100 |
+| detecção | faulty_stuck | 32 | 4.000.000 | 100 | 100 | 1,0000 | 0,9638 a 1,0000 | 100 | 14 | 0 | 100 | 100 |
+| detecção | faulty_stuck | 64 | 4.000.000 | 100 | 100 | 1,0000 | 0,9638 a 1,0000 | 100 | 96 | 0 | 100 | 100 |
+| detecção | faulty_prng | - | 4.000.000 | 4 | 100 | 0,0400 | 0,0110 a 0,0993 | 0 | 0 | 0 | 0 | 4 |
+| referência (1ª leitura) | faulty_replay | - | 4.000.000 | 0 | 100 | 0,0000 | 0,0000 a 0,0362 | 0 | 0 | 0 | 0 | 0 |
+| detecção (2ª leitura) | faulty_replay | - | 4.000.000 | 100 | 100 | 1,0000 | 0,9638 a 1,0000 | 0 | 0 | 100 | 0 | 0 |
+| falso positivo | os | - | 4.000.000 | 18 | 500 | 0,0360 | 0,0215 a 0,0563 | 0 | 1 | 0 | 0 | 17 |
+
+**Falso positivo da `os`, por teste que reprovou o lote:**
+
+| Bits | Lotes `os` | Reprovados | monobit | block | runs | APT |
+|---|---|---|---|---|---|---|
+| 1.000.000 | 2.000 | 52 | 13 | 18 | 21 | 0 |
+| 4.000.000 | 500 | 18 | 6 | 6 | 5 | 1 |
+
+Referência (conta, não medição): 3 testes estatísticos independentes com p mínimo 0,01 reprovariam 0,0297 dos lotes de uma fonte perfeita.
+
+**Leitura (cada frase foi verificada contra os CSVs antes de ser gravada):**
+
+- Viés e correlação (`faulty_biased`, `faulty_correlated`) com intensidade igual ou maior que 0,505 em lotes de 1.000.000 bits, ou 0,502 em lotes de 4.000.000 bits, foram reprovados em todos os lotes.
+- Nos valores mais fracos da grade (0,501 nos dois tamanhos e 0,502 em 1.000.000 bits) a detecção é parcial: parte dos lotes passa.
+- O RCT não reprovou nenhum lote de viés nem de correlação.
+- Travamento (`faulty_stuck`): todos os lotes foram reprovados em todos os comprimentos da grade, inclusive no menor (8). O limite inferior de detecção do travamento não foi encontrado.
+- No menor comprimento de travamento (8), o RCT e o teste de min-entropia não reprovaram nenhum lote e os testes estatísticos reprovaram todos.
+- O RCT não reprova travamentos de 8 e 16 bits, reprova só parte dos lotes com 24 bits e reprova todos os lotes com 32 e 64 bits.
+- O teste de min-entropia só reprovou lotes com viés de 0,55, correlação de 0,6 ou travamento de 16 bits ou mais; não reprovou nenhum lote das demais células, incluindo `os`, `faulty_prng` e `faulty_replay`.
+- O teste de replay reprovou todas as 2ª leituras de `faulty_replay` e nenhum lote de qualquer outra célula (sem alarme falso de replay).
+- Na fonte `os`, o RCT e o teste de min-entropia não reprovaram nenhum lote.
+- Os IC 95% do falso positivo da `os` nos dois tamanhos se sobrepõem; estes dados não distinguem os dois tamanhos.
+- A taxa de reprovação de `faulty_prng` não se distingue da da `os`: os IC 95% se sobrepõem nos dois tamanhos. O teste de saída não separa um PRNG de uma fonte boa (limitação T4 do modelo de ameaça).
+
+**Ressalvas:**
+
+- As fontes defeituosas são simuladas (`eal.sources.faulty`, geradas por numpy). As taxas valem para esses modelos de defeito, não para ataques reais. O E2 não usou QPU.
+- As taxas das intensidades fracas incluem o ruído de fundo do falso positivo, que tem a ordem de grandeza da `os`; nada foi subtraído.
+- Os testes estatísticos só concluem a partir de um tamanho mínimo de lote (`STATS_MIN_BITS`). O E2 mediu apenas lotes acima desse mínimo e não mediu lotes menores.
+- Os testes estatísticos reprovam, por construção, uma fração das fontes perfeitas ligada ao p mínimo (referência acima). Mudar esse limiar mudaria também a sensibilidade nas intensidades fracas; isso só pode ser avaliado em um experimento novo, pré-registrado, e não foi feito aqui.
+- Os lotes da `os` não têm semente e não são reproduzíveis. Os das fontes defeituosas são reproduzíveis pela semente gravada em `e2_lotes.csv`. Os bits crus não foram guardados.
+- A grade, os tamanhos e as repetições foram fixados no commit indicado acima, antes da rodada. O aumento das repetições (10 vezes) foi decidido depois de medir o tempo e antes de ver qualquer taxa.
+
+**CSVs (SHA-256 dos bytes em disco):**
+
+- `e2_lotes.csv`: `f6d7cc87d3fa3fde9b7691307daa4a299628784fabd65ec4fc961510c94ad90a`
+- `e2_resumo.csv`: `2fd202e9b3cc0dccf1dd52a6212de0f6296fb6d3e067ddff68a92e1a0de62a0c`
+<!-- dia7-e2:end -->
