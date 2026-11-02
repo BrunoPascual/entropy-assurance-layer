@@ -1640,3 +1640,58 @@ Desvio-padrão do zdiff entre lotes da mesma sessão: de 1,089 a 1,145. Entre lo
 - `dia6_deriva_coleta3_estabilidade.csv`: `1c8009100de560e6c6a4e98c14e93459263294690cb3687d6a4670e0914518a8`
 - `dia6_deriva_coleta3_lotes.csv`: `ba97a9f9c21ac3736bff511e2d0d14bdac519408ce47419a0b2b98e3d056385a`
 <!-- dia7-coleta3:end -->
+
+<!-- dia7-e4:start -->
+### E4, resiliência da mistura: XOR contra o hash do mixer (Dia 7, registro gerado dos CSVs)
+
+Gerado por `scripts/registrar_e4.py` a partir de `e4_sequencias.csv` e `e4_resumo.csv`. Nenhum número foi digitado à mão. As frases da seção de leitura só são gravadas se cada uma for confirmada pelos CSVs; o script recusa se alguma falhar.
+
+**Protocolo (pré-registrado):** rodada sobre o commit `ed4ae200d4d3047b442e9120f1437707298fab48`, conferido na coluna `commit` das 1.440 linhas; 18 células; 2.000 sementes de 512 bits por sequência. Duas fontes por semente: a honesta (`os`, local) e a segunda (`qpu_remota`, remota), que muda por cenário; as duas entram declaradas como aprovadas. `hash` é o `mix` real em modo `keygen`; `xor` é um comparador do script (XOR dos primeiros 512 bits de cada fonte). O hash e o XOR de um mesmo cenário e repetição usam as mesmas entradas. Aprovada: os 3 testes estatísticos do pipeline passam sobre as sementes concatenadas. IC 95% de Clopper-Pearson.
+
+**Resultados por célula:**
+
+| Cenário | Combinador | k | Esperado | Sequências completas | Aprovadas | Taxa | IC 95% | Recusadas | Fração no alvo | Sementes distintas | Máx. \|z\| | Posições \|z\| > 5 | Falhas do adversário |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| base_boa | hash | - | segura | 100 de 100 | 97 | 0,9700 | 0,9148 a 0,9938 | 0 | - | 2000 | 4,0696 | 0 | - |
+| base_boa | xor | - | segura | 100 de 100 | 94 | 0,9400 | 0,8740 a 0,9777 | 0 | - | 2000 | 4,2485 | 0 | - |
+| enviesada | hash | - | segura | 100 de 100 | 97 | 0,9700 | 0,9148 a 0,9938 | 0 | - | 2000 | 4,0249 | 0 | - |
+| enviesada | xor | - | segura | 100 de 100 | 98 | 0,9800 | 0,9296 a 0,9976 | 0 | - | 2000 | 4,0249 | 0 | - |
+| travada | hash | - | segura | 100 de 100 | 99 | 0,9900 | 0,9455 a 0,9997 | 0 | - | 2000 | 4,4721 | 0 | - |
+| travada | xor | - | segura | 100 de 100 | 98 | 0,9800 | 0,9296 a 0,9976 | 0 | - | 2000 | 4,1591 | 0 | - |
+| constante | hash | - | segura | 100 de 100 | 98 | 0,9800 | 0,9296 a 0,9976 | 0 | - | 2000 | 4,5616 | 0 | - |
+| constante | xor | - | segura | 100 de 100 | 95 | 0,9500 | 0,8872 a 0,9836 | 0 | - | 2000 | 4,2933 | 0 | - |
+| copia | hash | - | sem_semente | 0 de 100 | 0 | - | - | 200.000 | - | 0 | - | - | - |
+| copia | xor | - | insegura | 100 de 100 | 0 | 0,0000 | 0,0000 a 0,0362 | 0 | - | 1 | 44,7214 | 512 | - |
+| adv_alvo | hash | - | segura | 100 de 100 | 97 | 0,9700 | 0,9148 a 0,9938 | 0 | 0,0000 | 2000 | 4,0249 | 0 | - |
+| adv_alvo | xor | - | insegura | 100 de 100 | 97 | 0,9700 | 0,9148 a 0,9938 | 0 | 1,0000 | 2000 | 4,3380 | 0 | - |
+| sem_fonte_boa | hash | - | insegura | 100 de 100 | 0 | 0,0000 | 0,0000 a 0,0362 | 0 | - | 1 | 44,7214 | 512 | - |
+| sem_fonte_boa | xor | - | insegura | 100 de 100 | 0 | 0,0000 | 0,0000 a 0,0362 | 0 | - | 1 | 44,7214 | 512 | - |
+| adv_forca | hash | 1 | k_bits | 10 de 10 | 8 | 0,8000 | 0,4439 a 0,9748 | 0 | 1,0000 | 2000 | 44,7214 | 1 | 0 |
+| adv_forca | hash | 4 | k_bits | 10 de 10 | 0 | 0,0000 | 0,0000 a 0,3085 | 0 | 1,0000 | 2000 | 44,7214 | 4 | 0 |
+| adv_forca | hash | 8 | k_bits | 10 de 10 | 0 | 0,0000 | 0,0000 a 0,3085 | 0 | 1,0000 | 2000 | 44,7214 | 8 | 0 |
+| adv_forca | hash | 12 | k_bits | 10 de 10 | 0 | 0,0000 | 0,0000 a 0,3085 | 0 | 1,0000 | 2000 | 44,7214 | 12 | 0 |
+
+**Leitura (cada frase foi verificada contra os CSVs antes de ser gravada):**
+
+- Com uma fonte boa e independente (`base_boa`, `enviesada`, `travada`, `constante`), os dois combinadores deram sementes todas distintas, nenhuma posição de bit com |z| > 5 e taxa de aprovação com IC 95% sobreposto ao do `base_boa` do mesmo combinador.
+- Cópia exata da honesta: o `mix` real recusou todas as sementes (`input_hash` repetido, fail-closed); o XOR produziu uma única semente, repetida em toda a sequência.
+- Fonte adversária que vê a honesta (`adv_alvo`): no XOR, todas as sementes foram as escolhidas pelo adversário (fração no alvo 1) e a taxa de aprovação tem IC 95% sobreposto ao do `base_boa`, ou seja, os testes estatísticos não veem o controle. No hash, nenhuma semente coincidiu com o alvo e as sementes ficaram todas distintas.
+- Sem fonte boa (as duas constantes), os dois combinadores repetiram uma única semente em cada sequência.
+- Adversário que testa candidatos contra o hash (`adv_forca`, k = 1, 4, 8, 12): em cada k, todas as sementes tiveram os k primeiros bits em zero, exatamente k posições de bit com |z| > 5, sementes todas distintas e nenhuma falha dentro do limite de tentativas. Cada semente escolhida foi conferida contra o `mix` real durante a rodada (o script recusaria se alguma divergisse).
+- Sobre as sementes concatenadas, os testes estatísticos reprovaram só parte das sequências com k = 1 e todas com k = 4, 8, 12.
+- Nas células `copia/xor`, `sem_fonte_boa/hash`, `sem_fonte_boa/xor`, todas as sequências são idênticas (mesmos p-valores, mesmo |z| máximo e mesmas sementes distintas): as repetições não são observações independentes e o IC 95% da taxa de aprovação não se aplica a elas. Nenhuma célula com uma fonte boa está nessa lista.
+
+**Ressalvas:**
+
+- O modelo é o pior caso. No pipeline, nenhuma fonte recebe a saída das outras; a fonte que vê a honesta é hipotética (por exemplo, um provedor remoto que tivesse acesso à saída da `os`).
+- Todas as fontes entram declaradas como aprovadas: o E4 isola a combinação e não reavalia a saúde, que é medida no E2.
+- A aprovação é medida sobre milhares de sementes concatenadas. O pipeline gera uma semente por execução, e numa semente isolada não se vê repetição nem bits forçados. O controle do adversário sobre o XOR não aparece nos testes nem com as sementes concatenadas.
+- O XOR existe só no script do E4, como comparador; o `eal` usa só o hash.
+- Forçar k bits custa cerca de 2^k avaliações do hash por semente, e com mais computação k cresce. O que o hash limita é o controle a esses k bits dos 512 da semente; no XOR, o controle do adversário é total e sem custo.
+- O tempo de execução variou muito em relação à medição prévia, sobretudo no maior k. Isso não afeta os resultados, que são determinísticos pela semente de cada sequência.
+
+**CSVs (SHA-256 dos bytes em disco):**
+
+- `e4_sequencias.csv`: `65321cf68ecf1cfebae4f28228ae37be7ba5f1a6484f8b2af0d0ef92f4500779`
+- `e4_resumo.csv`: `aae9bf5c306c5be64dab60c13108804aae4754af55e6cbb600d0434281b4da5a`
+<!-- dia7-e4:end -->
