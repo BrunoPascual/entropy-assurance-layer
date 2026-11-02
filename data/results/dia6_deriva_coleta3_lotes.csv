@@ -1,0 +1,5 @@
+lote,sessao,job_id,n_shots,n_bits,criado_em,calibracao_no_envio,calibracao_execucao,retrato_leitura,calibracao_igual_coleta1,frac1,batch_hash,conferencia
+coleta1_001,coleta1,dbjlg80nceqs73ak89g0,9616,1500096,2026-11-01T15:24:23Z,2026-11-01 11:57:51-03:00,,envio,True,0.496442227697,bbee5253a3b594717b9f4939eaa97f0f278ca2431dee3ae73e57f7df5d57cb32,inventario+batch_hash
+coleta1_002,coleta1,dbjlkahffo6c73b9t1u0,9616,1500096,2026-11-01T15:28:12Z,2026-11-01 11:57:51-03:00,,envio,True,0.497970129912,3bfdb3706927670f3d86b80a0267fbf91615e7fdaff17b41aab967ef808e1d27,inventario+batch_hash
+coleta3_001,coleta3,dbkf24d6p51s73cmg7ng,9616,1500096,2026-11-02T20:23:48Z,2026-11-02 16:36:41-03:00,2026-11-02 17:14:09-03:00,execucao,False,0.502755157003,1ccdf553753422283a6ea5f57becfda3912323cd259f37b2e404cf10a07b0ba3,inventario+batch_hash
+coleta3_002,coleta3,dbkf4f1ffo6c73bbc8m0,9616,1500096,2026-11-02T20:28:54Z,2026-11-02 17:14:09-03:00,2026-11-02 17:14:09-03:00,execucao,False,0.504835690516,f651a2b2295ba250aeb6142b4f995adfea6f426e55d24555f3d04701e3def3a2,inventario+batch_hash
