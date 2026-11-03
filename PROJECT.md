@@ -1695,3 +1695,91 @@ Gerado por `scripts/registrar_e4.py` a partir de `e4_sequencias.csv` e `e4_resum
 - `e4_sequencias.csv`: `65321cf68ecf1cfebae4f28228ae37be7ba5f1a6484f8b2af0d0ef92f4500779`
 - `e4_resumo.csv`: `aae9bf5c306c5be64dab60c13108804aae4754af55e6cbb600d0434281b4da5a`
 <!-- dia7-e4:end -->
+
+<!-- dia7-e3:start -->
+### E3, vazão e custo por megabit (Dia 7, registro gerado dos CSVs)
+
+Gerado por `scripts/registrar_e3.py` a partir de `e3_qpu.csv`, `e3_local.csv` e `e3_resumo.csv`. Nenhum número foi digitado à mão. As frases estruturais só são gravadas se confirmadas pelos CSVs; o veredito, a razão nos extremos e os grupos de tempo são calculados dos CSVs.
+
+**Protocolo (pré-registrado):** nenhum job foi enviado; foram usados os 8 jobs já executados no Open Plan (log de uso, JSONs dos crus e CSVs de saúde, conferidos entre si). Custo teórico: segundos de QPU da API vezes o preço por minuto (pay-as-you-go US$ 96/min, flex US$ 72/min, premium US$ 48/min); fonte https://www.ibm.com/quantum/pricing, consultada em 2026-11-03. 1 Mbit = 1.000.000 bits. Benchmark local: o `run_pipeline` real com a `os`, lotes de 1.500.096 bits, 1 execução de aquecimento descartada e 20 medidas, sobre o commit `af1f1c4ab8d2687f57b70291cabd33e551da6a0f`. Critério: razão de pelo menos 10.
+
+**Jobs da QPU:**
+
+| Sessão | Job | Shots | Bits | Segundos de QPU | Bits/s | Custo teórico (US$) | US$/Mbit | Saúde | Bits úteis | Bits úteis hipotéticos |
+|---|---|---|---|---|---|---|---|---|---|---|
+| cal | dbji1pgnceqs73ak2c8g | 1.000 | 156.000 | 2,0 | 78000,0000 | 3,2000 | 20,5128 | - | - | - |
+| cal | dbjlaghkdqps7390qbq0 | 4.000 | 624.000 | 3,0 | 208000,0000 | 4,8000 | 7,6923 | - | - | - |
+| coleta1 | dbjlg80nceqs73ak89g0 | 9.616 | 1.500.096 | 5,0 | 300019,2000 | 8,0000 | 5,3330 | reprovada | 0 | 1.348.344 |
+| coleta1 | dbjlkahffo6c73b9t1u0 | 9.616 | 1.500.096 | 5,0 | 300019,2000 | 8,0000 | 5,3330 | reprovada | 0 | 1.338.096 |
+| coleta2 | dbjq01pffo6c73ba4lo0 | 9.616 | 1.500.096 | 5,0 | 300019,2000 | 8,0000 | 5,3330 | reprovada | 0 | 1.344.684 |
+| coleta2 | dbjq4ehkdqps73912u30 | 9.616 | 1.500.096 | 5,0 | 300019,2000 | 8,0000 | 5,3330 | reprovada | 0 | 1.338.096 |
+| coleta3 | dbkf24d6p51s73cmg7ng | 9.616 | 1.500.096 | 5,0 | 300019,2000 | 8,0000 | 5,3330 | reprovada | 0 | 1.346.148 |
+| coleta3 | dbkf4f1ffo6c73bbc8m0 | 9.616 | 1.500.096 | 5,0 | 300019,2000 | 8,0000 | 5,3330 | reprovada | 0 | 1.338.828 |
+
+**Resumo (`e3_resumo.csv`):**
+
+| Métrica | Valor | Unidade |
+|---|---|---|
+| `preco_fonte` | https://www.ibm.com/quantum/pricing | url |
+| `preco_data_consulta` | 2026-11-03 | data |
+| `qpu_jobs` | 8 | jobs |
+| `qpu_segundos` | 35,0 | s |
+| `qpu_bits_brutos` | 9.780.576 | bits |
+| `qpu_custo_pay_as_you_go` | 56,00 | USD |
+| `qpu_custo_flex` | 42,00 | USD |
+| `qpu_custo_premium` | 28,00 | USD |
+| `coleta_jobs` | 6 | jobs |
+| `coleta_segundos` | 30,0 | s |
+| `coleta_bits_brutos` | 9.000.576 | bits |
+| `coleta_bits_por_s` | 300019,2000 | bits/s |
+| `coleta_s_por_mbit_bruto` | 3,3331 | s/Mbit |
+| `coleta_custo_por_mbit_bruto_pay_as_you_go` | 5,3330 | USD/Mbit |
+| `coleta_custo_por_mbit_bruto_flex` | 3,9997 | USD/Mbit |
+| `coleta_custo_por_mbit_bruto_premium` | 2,6665 | USD/Mbit |
+| `ajuste_fixo_s` | 1,6296 | s/job |
+| `ajuste_por_shot_s` | 0,00035031 | s/shot |
+| `ajuste_custo_marginal_por_mbit_pay_as_you_go` | 3,5930 | USD/Mbit |
+| `coleta_lotes_aprovados` | 0 | lotes |
+| `coleta_bits_uteis` | 0 | bits |
+| `coleta_custo_por_mbit_util_pay_as_you_go` | indefinido | USD/Mbit |
+| `coleta_bits_uteis_hipoteticos` | 8.054.196 | bits |
+| `coleta_custo_por_mbit_util_hipotetico_pay_as_you_go` | 5,9596 | USD/Mbit |
+| `local_execucoes` | 20 | execuções |
+| `local_t_mediana_s` | 0,324724 | s |
+| `local_t_min_s` | 0,074158 | s |
+| `local_t_max_s` | 0,384965 | s |
+| `local_s_por_mbit_bruto` | 0,216468 | s/Mbit |
+| `local_bits_por_s` | 4619610,2222 | bits/s |
+| `local_bits_extraidos_mediana` | 1.354.932 | bits |
+| `razao_s_por_mbit_qpu_sobre_os` | 15,40 | vezes |
+| `criterio_limiar` | 10 | vezes |
+| `criterio_muito_mais_caro` | True | booleano |
+
+**Tempos locais por execução, em ordem (s):** 0,082213; 0,074158; 0,074319; 0,095391; 0,106602; 0,079099; 0,283410; 0,332715; 0,325059; 0,312211; 0,317399; 0,325880; 0,324388; 0,359362; 0,340648; 0,336673; 0,353267; 0,333450; 0,384965; 0,328416.
+
+**Leitura:**
+
+- Critério pré-registrado (razão entre os segundos de QPU por megabit bruto e os segundos de CPU por megabit bruto da `os`, pela mediana local, igual ou maior que 10): razão 15,40; hipótese "muito mais caro que a `os`" confirmada sob esta definição.
+- A razão nos extremos dos tempos locais: 67,4236 com a execução mais rápida e 12,9882 com a mais lenta, igual ou acima do limiar na execução mais lenta.
+- Os tempos locais formam dois grupos sem sobreposição, em ordem de execução: as execuções 0 a 5 (6 execuções, de 0,074158 a 0,106602 s) e 6 a 19 (14 execuções, de 0,283410 a 0,384965 s); o menor tempo do segundo grupo é 2,6586 vezes o maior do primeiro. A mediana pré-registrada cai no grupo lento. Razão com a mediana do grupo rápido: 61,9917; do grupo lento: 15,1256. A causa da diferença não foi investigada.
+- Nenhum dos jobs de coleta teve lote aprovado pela saúde: bits úteis = 0 e o custo por megabit útil é indefinido. O custo por megabit útil observado não existe; só o custo por megabit bruto.
+- O ajuste de segundos por shot dá um custo fixo por job positivo e um custo marginal por megabit menor que o custo médio por megabit dos jobs de coleta: jobs maiores saem mais baratos por bit.
+- Se os lotes tivessem sido aprovados, o custo por megabit útil hipotético seria maior que o custo por megabit bruto, porque o extrator aproveita só parte dos bits.
+
+**Ressalvas:**
+
+- O custo é teórico. O Open Plan não cobra nada; o preço do plano pago foi lido na página da IBM na data de consulta registrada acima e pode mudar. Nenhum job foi enviado para o E3: ele usa só os 8 jobs já executados.
+- Os segundos de QPU vêm da API em valores inteiros (2,0; 3,0; 5,0) e há só 3 tamanhos de job; o ajuste de custo fixo e marginal é grosseiro e a incerteza dele não foi quantificada.
+- O tempo de QPU é tempo cobrado de execução; o tempo local é o tempo de parede do pipeline completo (leitura, saúde, extração e mistura) da `os`. São recursos diferentes e não foram valorados na mesma moeda: o custo em dólares da `os` não foi valorado (CPU e energia ficam de fora). Os bits da QPU ainda passariam pelo mesmo processamento local.
+- Não há medida de latência de fila nem de tempo de parede da QPU: o log registra a hora da recuperação, e não a do fim do job.
+- Todos os jobs usaram `rep_delay` de 0,00025 s. A documentação da IBM registra um aumento temporário do padrão para 4 ms; não foi verificado se isso afeta jobs que definem o valor, e o custo vale para a configuração usada.
+- As RUs do painel da IBM não foram usadas; a conversão entre RUs e segundos continua pendente (IBM_RU).
+- O benchmark local é de uma única máquina e a velocidade oscilou (ver os tempos por execução); o critério foi avaliado pela mediana, como pré-registrado.
+- Os bits úteis hipotéticos usam o extrator do projeto com o H estimado de cada lote. Esses lotes foram reprovados pela saúde, então não são bits utilizáveis.
+
+**CSVs (SHA-256 dos bytes em disco):**
+
+- `e3_qpu.csv`: `7cb9aa0f916600cfebf8d1d5ed1be7e0c7e2a18ceefee3ce62b029663aca85da`
+- `e3_local.csv`: `4861db25ed42880723ad9cf5d567d7dc88fd2db0b9fea1e70bdc859bcbb6b3b9`
+- `e3_resumo.csv`: `8b3a0ef0abffa11b1d28c629cdb515d7976b859c594966c1b7c023088471ba8f`
+<!-- dia7-e3:end -->
