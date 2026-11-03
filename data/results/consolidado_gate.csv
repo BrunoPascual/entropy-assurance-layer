@@ -1,0 +1,6 @@
+experimento,estado,n_metricas,n_arquivos,arquivos,ressalva,commit
+E1,parcial,1201,12,dia6_coleta2_qpu_vs_sim_lotes.csv;dia6_coleta2_qpu_vs_sim_resumo.csv;dia6_coleta3_qpu_vs_sim_lotes.csv;dia6_coleta3_qpu_vs_sim_resumo.csv;dia6_deriva_coleta2_conjunto_fixo.csv;dia6_deriva_coleta2_estabilidade.csv;dia6_deriva_coleta3_conjunto_fixo.csv;dia6_deriva_coleta3_estabilidade.csv;dia6_deriva_dia_conjunto_fixo.csv;dia6_deriva_dia_estabilidade.csv;dia6_qpu_vs_sim_lotes.csv;dia6_qpu_vs_sim_resumo.csv,deriva entre dias medida só contra a coleta 1; coleta 3 contra a coleta 2 não feita,a00df75b11b5a25e2a9a4db288ea3f2a4f11326e
+E2,completo,532,1,e2_resumo.csv,,a00df75b11b5a25e2a9a4db288ea3f2a4f11326e
+E3,completo,34,1,e3_resumo.csv,"custo teórico, sem gasto (Open Plan)",a00df75b11b5a25e2a9a4db288ea3f2a4f11326e
+E4,completo,274,1,e4_resumo.csv,,a00df75b11b5a25e2a9a4db288ea3f2a4f11326e
+E5,parcial,50,1,e5_resumo.csv,"só etapa A, sem QPU; CHSH na QPU real não feito",a00df75b11b5a25e2a9a4db288ea3f2a4f11326e
