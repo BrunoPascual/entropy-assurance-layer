@@ -1783,3 +1783,50 @@ Gerado por `scripts/registrar_e3.py` a partir de `e3_qpu.csv`, `e3_local.csv` e 
 - `e3_local.csv`: `4861db25ed42880723ad9cf5d567d7dc88fd2db0b9fea1e70bdc859bcbb6b3b9`
 - `e3_resumo.csv`: `8b3a0ef0abffa11b1d28c629cdb515d7976b859c594966c1b7c023088471ba8f`
 <!-- dia7-e3:end -->
+
+<!-- dia7-e5a:start -->
+### E5 (etapa A), teste CHSH sem QPU (Dia 7, registro gerado dos CSVs)
+
+Gerado por `scripts/registrar_e5.py` a partir de `e5_rodadas.csv` e `e5_resumo.csv`. Nenhum número foi digitado à mão. As frases estruturais só são gravadas se confirmadas pelos CSVs; os critérios por configuração e o efeito do ruído são calculados dos CSVs.
+
+**Protocolo (pré-registrado):** rodada sobre o commit `a467431cc9c8af0cec1414d41a083358e850bd70`, conferido na coluna `commit` das 401 linhas. Estado de Bell Φ⁺ (H e CX) com rotação Ry(−θ) antes da medição em cada lado; Alice mede em 0 e π/2 e Bob em π/4 e −π/4; E = P(iguais) − P(diferentes); S = E(a0,b0) + E(a0,b1) + E(a1,b0) − E(a1,b1). 4000 shots por ajuste (16000 por estimativa de S) e 100 repetições por configuração amostrada, cada uma com semente própria gravada. Nenhuma chamada à QPU. Margem dos critérios: 3 erros-padrão da média das repetições.
+
+**Resultados por configuração:**
+
+| Configuração | Esperado | Repetições | S médio | Desvio-padrão | Erro-padrão médio | S mínimo | S máximo | Fração S > 2 | Margem | Critério |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `ideal_exato` | S = 2*raiz(2) (exato) | 1 | 2,828427 | 0,000000 | 0,000000 | 2,828427 | 2,828427 | 1,0000 | 0,000000 | cumprido |
+| `ideal_amostrado` | compatível com 2*raiz(2) | 100 | 2,828795 | 0,024325 | 0,022354 | 2,770000 | 2,884500 | 1,0000 | 0,007297 | cumprido |
+| `ruido_fake_kingston` | entre 2 e 2*raiz(2) (hipótese do assistente) | 100 | 2,759055 | 0,024498 | 0,022892 | 2,700000 | 2,821000 | 1,0000 | 0,007349 | cumprido |
+| `classico_aleatorio` | S <= 2 | 100 | -0,000685 | 0,030991 | 0,031619 | -0,077500 | 0,093000 | 0,0000 | 0,009297 | cumprido |
+| `classico_otimo` | S <= 2 | 100 | 2,000000 | 0,000000 | 0,000000 | 2,000000 | 2,000000 | 0,0000 | 0,000000 | cumprido |
+
+**Par físico do ruído simulado:** qubits 147-148 do `FakeKingston`; erro de CZ 0,0024336098672234907; erro médio de leitura 0,005859375 e 0,002197265625; calibração 2026-04-15T09:15:15+02:00.
+
+**Leitura:**
+
+- Critérios pré-registrados cumpridos em: `ideal_exato`, `ideal_amostrado`, `ruido_fake_kingston`, `classico_aleatorio`, `classico_otimo`. Nenhuma configuração deixou de cumprir o critério.
+- Efeito do ruído simulado: o S médio passou de 2,828795 (ideal amostrado) para 2,759055 (`ruido_fake_kingston`), uma queda de 0,069740, 20,200762 erros-padrão da diferença entre as médias.
+- Saídas clássicas independentes: S médio -0,000685; compatível com 0 dentro da margem de 0,009297. O limite clássico é 2 e o máximo quântico é 2√2.
+- O S exato do circuito (probabilidades do estado, sem amostragem) é 2√2, com tolerância de 1e-12.
+- O ruído foi simulado em um único par físico, com os mesmos erros de CZ e de leitura, a mesma data de calibração e uma porta de dois qubits por circuito em todas as repetições.
+- A estratégia clássica determinística deu S = 2 e erro-padrão 0 em todas as repetições: as repetições são idênticas por construção.
+- O erro-padrão médio calculado bate com o teórico dentro de 5%: √(2/N) = 0,022361 para o estado de Bell e √(4/N) = 0,031623 para saídas independentes, com N = 4000 shots por ajuste.
+- O desvio-padrão de S entre repetições fica entre 0,75 e 1,25 vezes o erro-padrão calculado nas três configurações amostradas (com 100 repetições, o desvio-padrão amostral tem erro relativo de cerca de 7%).
+
+**Ressalvas:**
+
+- O simulador é um gerador clássico (limitação 6): o S de 2√2 sai do cálculo das probabilidades do estado de Bell, e não de um experimento quântico.
+- O CHSH numa QPU em nuvem não é um teste de Bell sem brechas (limitação 5): os ajustes de medição são escolhidos pelo experimentador e os dois qubits ficam no mesmo chip, sem separação. Isto é só uma verificação de sanidade do código e da análise.
+- O ruído é o modelo do `FakeKingston` (eal.sources.noise, leitura assimétrica) com a calibração gravada no backend simulado, na data registrada acima; não inclui crosstalk. Uma QPU real em outra data pode dar um S diferente.
+- O par de qubits veio da regra pré-registrada (menor soma do erro de CZ e do erro médio de leitura), e não foi escolhido pelo S.
+- Os dois geradores clássicos são referências por construção: a estratégia determinística atinge o limite clássico 2 e as saídas independentes dão S perto de 0. Não são medidas de nenhum dispositivo.
+- A hipótese de que a QPU real fique entre 2 e 2√2 não foi testada: esta é a etapa A, sem QPU.
+- A faixa 2 < S < 2√2 para o simulador com ruído é uma hipótese do assistente; o PROJECT.md só fixa essa faixa para a QPU real.
+- O tempo da rodada variou em relação à medição prévia (ver T_TEMPO); isso não afeta os resultados, que são determinísticos pela semente de cada repetição.
+
+**CSVs (SHA-256 dos bytes em disco):**
+
+- `e5_rodadas.csv`: `d782bf7dacff9197338e4641c94b201b829e497d40b2420cefb070b062507574`
+- `e5_resumo.csv`: `4080372e87285858226bde56757f031de2d79afce0260d129fbde70825eaff2f`
+<!-- dia7-e5a:end -->
