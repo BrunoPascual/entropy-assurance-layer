@@ -1,0 +1,6 @@
+configuracao,esperado,n_reps,s_media,s_dp,se_media,s_min,s_max,frac_s_maior_2,margem,criterio_ok
+ideal_exato,S = 2*raiz(2) (exato),1,2.828427,0.000000,0.000000,2.828427,2.828427,1.0000,0.000000,True
+ideal_amostrado,compatível com 2*raiz(2),100,2.828795,0.024325,0.022354,2.770000,2.884500,1.0000,0.007297,True
+ruido_fake_kingston,entre 2 e 2*raiz(2) (hipótese do assistente),100,2.759055,0.024498,0.022892,2.700000,2.821000,1.0000,0.007349,True
+classico_aleatorio,S <= 2,100,-0.000685,0.030991,0.031619,-0.077500,0.093000,0.0000,0.009297,True
+classico_otimo,S <= 2,100,2.000000,0.000000,0.000000,2.000000,2.000000,0.0000,0.000000,True
