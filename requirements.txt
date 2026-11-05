@@ -9,4 +9,5 @@ matplotlib==3.11.2
 pytest==9.2.0
 kyber-py==1.2.0
 dilithium-py==1.5.1
-# a adicionar e fixar depois de instalar: pandas, streamlit
+pandas==3.1.1
+streamlit==1.66.1
