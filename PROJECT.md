@@ -1830,3 +1830,208 @@ Gerado por `scripts/registrar_e5.py` a partir de `e5_rodadas.csv` e `e5_resumo.c
 - `e5_rodadas.csv`: `d782bf7dacff9197338e4641c94b201b829e497d40b2420cefb070b062507574`
 - `e5_resumo.csv`: `4080372e87285858226bde56757f031de2d79afce0260d129fbde70825eaff2f`
 <!-- dia7-e5a:end -->
+
+<!-- dia7-consolidado:start -->
+### Consolidado E1 a E5 para o painel (Dia 7, registro gerado dos CSVs)
+
+Gerado por `scripts/registrar_consolidado.py` a partir de `consolidado_gate.csv` e `consolidado_e1_e5.csv`, que o `scripts/consolidar_dia7.py` montou dos CSVs de resultados na rodada sobre o commit `a00df75b11b5a25e2a9a4db288ea3f2a4f11326e` (coluna `commit` das 5 linhas do gate). Nenhum número foi digitado à mão. O registro confere que os dois CSVs são a derivação exata dos arquivos de origem, com o SHA-256 de cada origem; as frases sobre a deriva, o CHSH, o custo útil e os arquivos do painel só são gravadas se confirmadas pelos CSVs.
+
+**Gate do Dia 7 (tabela com os 5 experimentos):** E1 (parcial), E2 (completo), E3 (completo), E4 (completo), E5 (parcial); 2.091 linhas no formato longo (experimento, chave, métrica, valor, unidade, estado, arquivo de origem e SHA-256 da origem).
+
+| Experimento | Estado | Métricas | Arquivos de origem | Ressalva |
+|---|---|---|---|---|
+| E1 | parcial | 1.201 | 12 | deriva entre dias medida só contra a coleta 1; coleta 3 contra a coleta 2 não feita |
+| E2 | completo | 532 | 1 | - |
+| E3 | completo | 34 | 1 | custo teórico, sem gasto (Open Plan) |
+| E4 | completo | 274 | 1 | - |
+| E5 | parcial | 50 | 1 | só etapa A, sem QPU; CHSH na QPU real não feito |
+
+Nas tabelas abaixo, `-` marca célula vazia no CSV de origem; as métricas que sustentam as frases da Leitura são obrigatórias e, se faltarem, o registro é recusado.
+
+**E1, QPU real contra simulador e `os` (3 coletas) e deriva:**
+
+| Coleta | Fonte | Lote | Aprovado | H estimada | Pipeline | Bits extraídos |
+|---|---|---|---|---|---|---|
+| 1 | qpu_real | 1 | não | 0,9623 | excluded | 0 |
+| 1 | qpu_real | 2 | não | 0,9555 | excluded | 0 |
+| 1 | simulador | 1 | não | 0,9592 | excluded | 0 |
+| 1 | simulador | 2 | não | 0,9618 | excluded | 0 |
+| 1 | os | 1 | sim | 0,9695 | mixed | 1.359.324 |
+| 1 | os | 2 | sim | 0,9665 | mixed | 1.354.932 |
+| 2 | qpu_real | 1 | não | 0,9598 | excluded | 0 |
+| 2 | qpu_real | 2 | não | 0,9553 | excluded | 0 |
+| 2 | simulador | 1 | não | 0,9592 | excluded | 0 |
+| 2 | simulador | 2 | não | 0,9618 | excluded | 0 |
+| 2 | os | 1 | sim | 0,9665 | mixed | 1.354.932 |
+| 2 | os | 2 | sim | 0,9665 | mixed | 1.354.932 |
+| 3 | qpu_real | 1 | não | 0,9606 | excluded | 0 |
+| 3 | qpu_real | 2 | não | 0,9559 | excluded | 0 |
+| 3 | simulador | 1 | não | 0,9592 | excluded | 0 |
+| 3 | simulador | 2 | não | 0,9618 | excluded | 0 |
+| 3 | os | 1 | sim | 0,9625 | mixed | 1.349.076 |
+| 3 | os | 2 | sim | 0,9686 | mixed | 1.357.860 |
+
+| Coleta | Fonte | Fração de 1 (lote 1) | Fração de 1 (lote 2) | DP do zdiff | Qubits com |z| > 3 | |z| máximo |
+|---|---|---|---|---|---|---|
+| 1 | qpu_real | 0,4964 | 0,4980 | 1,145 | 3 | 4,36 |
+| 1 | simulador | 0,5034 | 0,5037 | 0,999 | 0 | 2,77 |
+| 1 | os | 0,5003 | 0,5007 | 1,036 | 0 | 2,64 |
+| 2 | qpu_real | 0,5025 | 0,5011 | 1,133 | 2 | 7,36 |
+| 2 | simulador | 0,5034 | 0,5037 | 0,999 | 0 | 2,77 |
+| 2 | os | 0,5005 | 0,4999 | 0,997 | 0 | 2,91 |
+| 3 | qpu_real | 0,5028 | 0,5048 | 1,089 | 1 | 3,20 |
+| 3 | simulador | 0,5034 | 0,5037 | 0,999 | 0 | 2,77 |
+| 3 | os | 0,5005 | 0,4998 | 0,973 | 0 | 2,78 |
+
+| Comparação | Lote A | Lote B | zdiff médio | DP do zdiff | Qubits com |z| > 3 | |z| máximo |
+|---|---|---|---|---|---|---|
+| mesmo_dia | cal_001 | cal_002 | -0,011 | 1,447 | 6 | 6,05 |
+| mesmo_dia | cal_001 | coleta1_001 | 0,046 | 1,615 | 5 | 10,33 |
+| mesmo_dia | cal_001 | coleta1_002 | -0,048 | 1,567 | 6 | 8,90 |
+| mesmo_dia | cal_002 | coleta1_001 | 0,097 | 1,264 | 2 | 6,76 |
+| mesmo_dia | cal_002 | coleta1_002 | -0,066 | 1,129 | 2 | 4,37 |
+| mesmo_dia | coleta1_001 | coleta1_002 | -0,212 | 1,145 | 3 | 4,36 |
+| coleta2_vs_coleta1 | coleta1_001 | coleta1_002 | -0,212 | 1,145 | 3 | 4,36 |
+| coleta2_vs_coleta1 | coleta1_001 | coleta2_001 | -0,845 | 3,274 | 12 | 22,60 |
+| coleta2_vs_coleta1 | coleta1_001 | coleta2_002 | -0,649 | 3,377 | 9 | 25,89 |
+| coleta2_vs_coleta1 | coleta1_002 | coleta2_001 | -0,633 | 3,111 | 10 | 23,80 |
+| coleta2_vs_coleta1 | coleta1_002 | coleta2_002 | -0,437 | 3,313 | 11 | 27,09 |
+| coleta2_vs_coleta1 | coleta2_001 | coleta2_002 | 0,196 | 1,133 | 2 | 7,36 |
+| coleta3_vs_coleta1 | coleta1_001 | coleta1_002 | -0,212 | 1,145 | 3 | 4,36 |
+| coleta3_vs_coleta1 | coleta1_001 | coleta3_001 | -0,882 | 3,063 | 12 | 21,91 |
+| coleta3_vs_coleta1 | coleta1_001 | coleta3_002 | -1,171 | 3,067 | 14 | 22,21 |
+| coleta3_vs_coleta1 | coleta1_002 | coleta3_001 | -0,670 | 2,965 | 11 | 19,73 |
+| coleta3_vs_coleta1 | coleta1_002 | coleta3_002 | -0,959 | 2,983 | 11 | 19,17 |
+| coleta3_vs_coleta1 | coleta3_001 | coleta3_002 | -0,288 | 1,089 | 1 | 3,20 |
+
+**E2, ataques (detecção e falso positivo):**
+
+| Fonte | Parâmetro | Tipo | Bits | Leitura | Lotes | Reprovados | Taxa |
+|---|---|---|---|---|---|---|---|
+| faulty_biased | p=0.501 | deteccao | 1.000.000 | 1 | 200 | 60 | 0,3000 |
+| faulty_biased | p=0.502 | deteccao | 1.000.000 | 1 | 200 | 185 | 0,9250 |
+| faulty_biased | p=0.505 | deteccao | 1.000.000 | 1 | 200 | 200 | 1,0000 |
+| faulty_biased | p=0.51 | deteccao | 1.000.000 | 1 | 200 | 200 | 1,0000 |
+| faulty_biased | p=0.55 | deteccao | 1.000.000 | 1 | 200 | 200 | 1,0000 |
+| faulty_correlated | rho=0.501 | deteccao | 1.000.000 | 1 | 200 | 64 | 0,3200 |
+| faulty_correlated | rho=0.502 | deteccao | 1.000.000 | 1 | 200 | 184 | 0,9200 |
+| faulty_correlated | rho=0.505 | deteccao | 1.000.000 | 1 | 200 | 200 | 1,0000 |
+| faulty_correlated | rho=0.51 | deteccao | 1.000.000 | 1 | 200 | 200 | 1,0000 |
+| faulty_correlated | rho=0.6 | deteccao | 1.000.000 | 1 | 200 | 200 | 1,0000 |
+| faulty_stuck | run_length=8 | deteccao | 1.000.000 | 1 | 200 | 200 | 1,0000 |
+| faulty_stuck | run_length=16 | deteccao | 1.000.000 | 1 | 200 | 200 | 1,0000 |
+| faulty_stuck | run_length=24 | deteccao | 1.000.000 | 1 | 200 | 200 | 1,0000 |
+| faulty_stuck | run_length=32 | deteccao | 1.000.000 | 1 | 200 | 200 | 1,0000 |
+| faulty_stuck | run_length=64 | deteccao | 1.000.000 | 1 | 200 | 200 | 1,0000 |
+| faulty_prng | - | deteccao | 1.000.000 | 1 | 200 | 6 | 0,0300 |
+| faulty_replay | - | referencia | 1.000.000 | 1 | 200 | 4 | 0,0200 |
+| faulty_replay | - | deteccao | 1.000.000 | 2 | 200 | 200 | 1,0000 |
+| os | - | falso_positivo | 1.000.000 | 1 | 2000 | 52 | 0,0260 |
+| faulty_biased | p=0.501 | deteccao | 4.000.000 | 1 | 100 | 95 | 0,9500 |
+| faulty_biased | p=0.502 | deteccao | 4.000.000 | 1 | 100 | 100 | 1,0000 |
+| faulty_biased | p=0.505 | deteccao | 4.000.000 | 1 | 100 | 100 | 1,0000 |
+| faulty_biased | p=0.51 | deteccao | 4.000.000 | 1 | 100 | 100 | 1,0000 |
+| faulty_biased | p=0.55 | deteccao | 4.000.000 | 1 | 100 | 100 | 1,0000 |
+| faulty_correlated | rho=0.501 | deteccao | 4.000.000 | 1 | 100 | 89 | 0,8900 |
+| faulty_correlated | rho=0.502 | deteccao | 4.000.000 | 1 | 100 | 100 | 1,0000 |
+| faulty_correlated | rho=0.505 | deteccao | 4.000.000 | 1 | 100 | 100 | 1,0000 |
+| faulty_correlated | rho=0.51 | deteccao | 4.000.000 | 1 | 100 | 100 | 1,0000 |
+| faulty_correlated | rho=0.6 | deteccao | 4.000.000 | 1 | 100 | 100 | 1,0000 |
+| faulty_stuck | run_length=8 | deteccao | 4.000.000 | 1 | 100 | 100 | 1,0000 |
+| faulty_stuck | run_length=16 | deteccao | 4.000.000 | 1 | 100 | 100 | 1,0000 |
+| faulty_stuck | run_length=24 | deteccao | 4.000.000 | 1 | 100 | 100 | 1,0000 |
+| faulty_stuck | run_length=32 | deteccao | 4.000.000 | 1 | 100 | 100 | 1,0000 |
+| faulty_stuck | run_length=64 | deteccao | 4.000.000 | 1 | 100 | 100 | 1,0000 |
+| faulty_prng | - | deteccao | 4.000.000 | 1 | 100 | 4 | 0,0400 |
+| faulty_replay | - | referencia | 4.000.000 | 1 | 100 | 0 | 0,0000 |
+| faulty_replay | - | deteccao | 4.000.000 | 2 | 100 | 100 | 1,0000 |
+| os | - | falso_positivo | 4.000.000 | 1 | 500 | 18 | 0,0360 |
+
+**E3, vazão e custo (custo teórico):**
+
+| Métrica | Valor | Unidade |
+|---|---|---|
+| qpu_jobs | 8 | jobs |
+| qpu_segundos | 35,0 | s |
+| qpu_bits_brutos | 9.780.576 | bits |
+| coleta_bits_por_s | 300.019,2000 | bits/s |
+| coleta_custo_por_mbit_bruto_pay_as_you_go | 5,3330 | USD/Mbit |
+| coleta_lotes_aprovados | 0 | lotes |
+| coleta_bits_uteis | 0 | bits |
+| coleta_custo_por_mbit_util_pay_as_you_go | indefinido | USD/Mbit |
+| local_bits_por_s | 4.619.610,2222 | bits/s |
+| razao_s_por_mbit_qpu_sobre_os | 15,40 | vezes |
+| criterio_limiar | 10 | vezes |
+| criterio_muito_mais_caro | sim | booleano |
+
+**E4, resiliência da mistura:**
+
+| Cenário | Combinador | k | Esperado | Sequências | Completas | Aprovadas | Taxa de aprovação | Fração alvo |
+|---|---|---|---|---|---|---|---|---|
+| base_boa | hash | - | segura | 100 | 100 | 97 | 0,9700 | - |
+| base_boa | xor | - | segura | 100 | 100 | 94 | 0,9400 | - |
+| enviesada | hash | - | segura | 100 | 100 | 97 | 0,9700 | - |
+| enviesada | xor | - | segura | 100 | 100 | 98 | 0,9800 | - |
+| travada | hash | - | segura | 100 | 100 | 99 | 0,9900 | - |
+| travada | xor | - | segura | 100 | 100 | 98 | 0,9800 | - |
+| constante | hash | - | segura | 100 | 100 | 98 | 0,9800 | - |
+| constante | xor | - | segura | 100 | 100 | 95 | 0,9500 | - |
+| copia | hash | - | sem_semente | 100 | 0 | 0 | - | - |
+| copia | xor | - | insegura | 100 | 100 | 0 | 0,0000 | - |
+| adv_alvo | hash | - | segura | 100 | 100 | 97 | 0,9700 | 0,0000 |
+| adv_alvo | xor | - | insegura | 100 | 100 | 97 | 0,9700 | 1,0000 |
+| sem_fonte_boa | hash | - | insegura | 100 | 100 | 0 | 0,0000 | - |
+| sem_fonte_boa | xor | - | insegura | 100 | 100 | 0 | 0,0000 | - |
+| adv_forca | hash | 1 | k_bits | 10 | 10 | 8 | 0,8000 | 1,0000 |
+| adv_forca | hash | 4 | k_bits | 10 | 10 | 0 | 0,0000 | 1,0000 |
+| adv_forca | hash | 8 | k_bits | 10 | 10 | 0 | 0,0000 | 1,0000 |
+| adv_forca | hash | 12 | k_bits | 10 | 10 | 0 | 0,0000 | 1,0000 |
+
+**E5, CHSH etapa A (sem QPU):**
+
+| Configuração | Esperado | Repetições | S médio | DP de S | Critério |
+|---|---|---|---|---|---|
+| ideal_exato | S = 2*raiz(2) (exato) | 1 | 2,828427 | 0,000000 | sim |
+| ideal_amostrado | compatível com 2*raiz(2) | 100 | 2,828795 | 0,024325 | sim |
+| ruido_fake_kingston | entre 2 e 2*raiz(2) (hipótese do assistente) | 100 | 2,759055 | 0,024498 | sim |
+| classico_aleatorio | S <= 2 | 100 | -0,000685 | 0,030991 | sim |
+| classico_otimo | S <= 2 | 100 | 2,000000 | 0,000000 | sim |
+
+**Leitura (contagens calculadas dos CSVs):**
+
+- Lotes aprovados nos testes de saúde (as 3 coletas somadas): `qpu_real` 0 de 6; `simulador` 0 de 6; `os` 6 de 6.
+- Falso positivo na fonte `os`: 52 de 2000 lotes em 1.000.000 bits (0,0260); 18 de 500 lotes em 4.000.000 bits (0,0360).
+- O custo por Mbit útil da QPU real é indefinido: 0 lotes aprovados na coleta.
+- Critério pré-registrado cumprido em 5 de 5 configurações.
+
+**Ressalvas (deriva, CHSH, custo útil e arquivos do painel conferidos contra os CSVs antes de gravar; "sem gasto" e T_TEMPO vêm de decisão e limitação já registradas, não dos CSVs):**
+
+- E1: a deriva entre dias foi medida só contra a coleta 1; a coleta 3 contra a coleta 2 não foi feita (toda comparação entre sessões diferentes envolve um lote da coleta 1, e nenhuma compara coleta 2 com coleta 3).
+- E5: só a etapa A, com as 5 configurações sem QPU real; o CHSH na QPU real não foi feito e a hipótese de que a QPU real fique entre 2 e 2√2 não foi testada.
+- E3: custo teórico no Open Plan, sem gasto; os tempos medidos dependem da velocidade da máquina (T_TEMPO).
+- O consolidado não traz o viés por qubit nem o excesso de leitura; o painel lê direto os `dia6_*_por_qubit.csv` e `dia6_*_excesso_leitura.csv` das 3 coletas (os 6 arquivos existem em `data/results`).
+
+**Origens (SHA-256 dos bytes em disco, como gravados no consolidado):**
+
+- `dia6_qpu_vs_sim_resumo.csv`: `dd6f7375d0947e8cd0030eddf9552330468964dcbee860d51a1a47e4790ef7ba`
+- `dia6_coleta2_qpu_vs_sim_resumo.csv`: `d0af195608cac1e2fbb274110b3a5e2e05cb487d6f7c0f4793586f56c2b1abf7`
+- `dia6_coleta3_qpu_vs_sim_resumo.csv`: `76ac3049a647f478beee1c0ab8b11bbf7ae0be570990978bf76367601b4f978a`
+- `dia6_qpu_vs_sim_lotes.csv`: `5023a1a6df5473f2be955d66681d732127f6d29714424d0060b9b13cefbb6e14`
+- `dia6_coleta2_qpu_vs_sim_lotes.csv`: `0a30e43ae33ad62b8cbef7cea034beb3c0199c95beebab3ba3a23c7e36930edf`
+- `dia6_coleta3_qpu_vs_sim_lotes.csv`: `f7e6619f21370f48273dafeb96efa6206471dbf8f4037bb81723f7058a29c13f`
+- `dia6_deriva_dia_estabilidade.csv`: `0051ad524090bf8a20563f2bce7118aabb03feb58693869d10a38f12de9638e2`
+- `dia6_deriva_coleta2_estabilidade.csv`: `efdba5aedc83b95ba23a88135415facadd3a2f5697fb5537b62270d813fc5b99`
+- `dia6_deriva_coleta3_estabilidade.csv`: `1c8009100de560e6c6a4e98c14e93459263294690cb3687d6a4670e0914518a8`
+- `dia6_deriva_dia_conjunto_fixo.csv`: `543627875f9bfa2c64d0c642ab338b6e9375e25e391b26d008836f439ad63e9e`
+- `dia6_deriva_coleta2_conjunto_fixo.csv`: `6f823feef65d7b593a99f4e723f5a0150e88beaedbb93bd4475b0f09c74a4032`
+- `dia6_deriva_coleta3_conjunto_fixo.csv`: `aa5c3fbc07a5720c2922993134f52e7661575fdbab9429ecff2fcb5d88c12887`
+- `e2_resumo.csv`: `2fd202e9b3cc0dccf1dd52a6212de0f6296fb6d3e067ddff68a92e1a0de62a0c`
+- `e3_resumo.csv`: `8b3a0ef0abffa11b1d28c629cdb515d7976b859c594966c1b7c023088471ba8f`
+- `e4_resumo.csv`: `aae9bf5c306c5be64dab60c13108804aae4754af55e6cbb600d0434281b4da5a`
+- `e5_resumo.csv`: `4080372e87285858226bde56757f031de2d79afce0260d129fbde70825eaff2f`
+
+**CSVs gerados (SHA-256 dos bytes em disco):**
+
+- `consolidado_e1_e5.csv`: `8c143a3e9ca7d232ec3eeb5b719fd2b17969c77dc5697dcad67a600c9d4d889e`
+- `consolidado_gate.csv`: `dd3940b3b9793c11b5f14bc58dd7102ccd9331cedd385157e8a5925effe0a0d6`
+<!-- dia7-consolidado:end -->
