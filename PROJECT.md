@@ -3,7 +3,7 @@
 - **Versão do documento:** 1.0
 - **Data:** 27/10/2026
 - **Autor:** Bruno Pascual
-- **Status:** Dia 5 de 9 (concluído; gate do Dia 5 aprovado, ver seção 16.3; revisão adversarial na seção 16.4)
+- **Status:** Dia 9 de 9 (entrega). Os dias 1 a 7 estão registrados abaixo; painel, relatório e revisão crítica do Dia 8 e README, one-pager, roadmap e cadeia de demonstração do Dia 9 estão no fim deste arquivo
 - **Documento irmão:** `THREAT_MODEL.md` (modelo de ameaça)
 
 > Este arquivo é a fonte de verdade do projeto. Cole-o no início de cada sessão com a IA.
@@ -595,7 +595,8 @@ matplotlib==3.11.2
 pytest==9.2.0
 kyber-py==1.2.0
 dilithium-py==1.5.1
-# a adicionar e fixar depois de instalar: pandas, streamlit
+pandas==3.1.1
+streamlit==1.66.1
 
 ```
 
@@ -2035,3 +2036,26 @@ Nas tabelas abaixo, `-` marca célula vazia no CSV de origem; as métricas que s
 - `consolidado_e1_e5.csv`: `8c143a3e9ca7d232ec3eeb5b719fd2b17969c77dc5697dcad67a600c9d4d889e`
 - `consolidado_gate.csv`: `dd3940b3b9793c11b5f14bc58dd7102ccd9331cedd385157e8a5925effe0a0d6`
 <!-- dia7-consolidado:end -->
+
+---
+
+## 20. Dia 8 e Dia 9: painel, relatório e entrega (registro)
+
+**Painel (`dashboard/`).** `data.py` (carga e verificação, sem Streamlit, testada) e `app.py` (uma página: fontes, saúde por lote, min-entropia, viés por qubit com deriva, último recibo com botão de verificação, E1 a E5). Lê só `data/results` e os recibos. Num clone limpo não há cadeia real e ele usa `demo/`, avisando na tela. `streamlit==1.66.1` e `pandas==3.1.1` fixados. Gate do painel: o servidor sobe (HTTP 200), o app roda sem exceção nos dados reais (teste com `AppTest`) e a verificação do recibo passa na cadeia real e reprova uma cópia adulterada.
+
+**Relatório (`relatorio/RELATORIO.md`, 7 figuras).** Gerado por `scripts/gerar_relatorio.py` a partir dos CSVs; as faixas de incerteza vêm de `scripts/incerteza_dia8.py` (`data/results/dia8_incerteza.csv`). O gerador recusa gravar uma frase se os CSVs deixarem de sustentá-la. Os 5 experimentos estão no relatório.
+
+**Revisão crítica (duas passadas).** Uma contra as faixas de incerteza e outra de um revisor independente, que recebeu o relatório e os CSVs sem a lista da primeira. Corrigido no relatório e no painel:
+
+- E3: a razão QPU/os é de **tempo** e o limiar de 10 fica dentro da faixa (custo marginal e máquina local mais lenta ficam abaixo de 10); a incerteza do ajuste marginal não foi medida.
+- Simulador: só 2 lotes distintos (semente fixa) aparecem nas 3 coletas; a contagem passou a ser 0 de 2.
+- A reprovação da QPU é por monobit; o runs reprova por pré-requisito; min-entropia e blocos aprovam. "Nenhum lote passou" descreve o tamanho do lote e a porta escolhida, não a qualidade da QPU.
+- H estimada: o valor absoluto é do estimador (a `os` também fica abaixo de 1); o p exato 6 contra 6 é só indício (lotes não independentes).
+- Deriva: as coletas 1 e 2 são do mesmo dia, então a comparação é "entre coletas" e não "entre dias"; o DP do zdiff já passa de 1 no mesmo dia; os ICs bootstrap são descritivos; a concentração em poucos qubits é conjetura.
+- E4: sem evidência de diferença de aprovação entre hash e XOR (n = 100 por braço); "nenhuma semente no alvo" no hash vale por construção; o hash não protege de quem testa candidatos (k bits com 2^k tentativas).
+- E5: conferência do código, não evidência sobre a QPU nem sobre aleatoriedade.
+- Linguagem: "aprovado" quer dizer ausência de defeito visível na saída; a assinatura garante integridade e ordem; a garantia de extração depende da estimativa de H e da independência dos bits.
+
+**Entrega (Dia 9).** `README.md`, `docs/ONE_PAGER.md`, `docs/ROADMAP.md` e `demo/` (3 recibos encadeados feitos pela CLI com uma chave de emissor só da demo; só a chave pública foi publicada; `demo/**/*.sk` está no `.gitignore`). Varredura de segredos antes da entrega: nenhum `.env`, chave privada ou token em arquivos versionados nem no histórico do Git.
+
+**Pendências declaradas.** FastAPI (opcional) não foi feita. A demo gravada de 3 a 5 minutos depende do autor. Os dados de mercado e de concorrentes do one-pager vêm da seção 3 deste brief e não foram revalidados. Não há licença definida. O E1 segue parcial (coleta 3 contra coleta 2) e o E5, só na etapa A.

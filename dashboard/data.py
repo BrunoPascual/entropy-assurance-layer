@@ -20,6 +20,8 @@ ROOT = Path(__file__).resolve().parent.parent
 RESULTS = ROOT / "data" / "results"
 RECEIPTS = ROOT / "data" / "receipts"
 KEYS = ROOT / "keys"
+DEMO_RECEIPTS = ROOT / "demo" / "receipts"
+DEMO_KEYS = ROOT / "demo" / "keys"
 
 # Coleta -> prefixo dos CSVs do Dia 6 e 7 (a coleta 1 não tem prefixo no nome).
 COLETAS: dict[int, str] = {1: "dia6_", 2: "dia6_coleta2_", 3: "dia6_coleta3_"}
@@ -60,6 +62,7 @@ def fontes_resumo(lotes: pd.DataFrame) -> pd.DataFrame:
             "Fonte": [FONTES_ROTULO.get(f, f) for f in g.size().index],
             "Simulada": g["is_simulated"].first().astype(bool).map({True: "sim", False: "não"}).values,
             "Lotes": g.size().values,
+            "Lotes distintos": g["batch_hash"].nunique().values,
             "Aprovados": g["saude_approved"].sum().astype(int).values,
             "Bits extraídos": g["ext_n_output_bits"].sum().astype(int).values,
         }
@@ -129,6 +132,18 @@ def e5(results: Path = RESULTS) -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------- recibos
+
+def resolve_receipts(receipts: Path = RECEIPTS, keys: Path = KEYS, demo_receipts: Path = DEMO_RECEIPTS,
+                     demo_keys: Path = DEMO_KEYS) -> tuple[Path, Path, bool]:
+    """Pasta de recibos e de chaves a usar: a real se ela tiver um log não vazio; senão a cadeia de demonstração.
+
+    Devolve (recibos, chaves, é_demo). A cadeia real fica fora do Git; num clone limpo só existe a demo.
+    """
+    log = Path(receipts) / RECEIPT_CHAIN_NAME
+    if log.is_file() and log.stat().st_size > 0 and (Path(keys) / ISSUER_PK_NAME).is_file():
+        return Path(receipts), Path(keys), False
+    return Path(demo_receipts), Path(demo_keys), True
+
 
 @dataclass(frozen=True)
 class ReceiptView:

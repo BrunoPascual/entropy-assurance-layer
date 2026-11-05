@@ -1,0 +1,50 @@
+bloco,item,estimativa,ic_inf,ic_sup,metodo,observacao
+h_lotes,QPU real (n=6 lotes distintos),0.957836,0.955301,0.962254,"mediana, mínimo e máximo dos lotes distintos",
+h_lotes,simulador (n=2 lotes distintos),0.960495,0.959153,0.961837,"mediana, mínimo e máximo dos lotes distintos",
+h_lotes,os (n=6 lotes distintos),0.966476,0.962463,0.969492,"mediana, mínimo e máximo dos lotes distintos",
+h_lotes,p exato qpu_real contra os,0.0021645,,,"Mann-Whitney exato, 6 contra 6","os 2 lotes de uma coleta não são independentes (mesmo job ou mesma sessão): p é indicativo, não confirmatório"
+frac1,coleta 1 lote 1 QPU real,0.496442,0.495642,0.497242,"p ± 1,96·raiz(p(1-p)/n)",n = 1500096 bits
+frac1,coleta 1 lote 2 QPU real,0.49797,0.49717,0.49877,"p ± 1,96·raiz(p(1-p)/n)",n = 1500096 bits
+frac1,coleta 1 lote 1 simulador,0.503409,0.502609,0.504209,"p ± 1,96·raiz(p(1-p)/n)",n = 1500096 bits
+frac1,coleta 1 lote 2 simulador,0.503724,0.502924,0.504525,"p ± 1,96·raiz(p(1-p)/n)",n = 1500096 bits
+frac1,coleta 2 lote 1 QPU real,0.502487,0.501686,0.503287,"p ± 1,96·raiz(p(1-p)/n)",n = 1500096 bits
+frac1,coleta 2 lote 2 QPU real,0.501079,0.500278,0.501879,"p ± 1,96·raiz(p(1-p)/n)",n = 1500096 bits
+frac1,coleta 2 lote 1 simulador,0.503409,0.502609,0.504209,"p ± 1,96·raiz(p(1-p)/n)",n = 1500096 bits
+frac1,coleta 2 lote 2 simulador,0.503724,0.502924,0.504525,"p ± 1,96·raiz(p(1-p)/n)",n = 1500096 bits
+frac1,coleta 3 lote 1 QPU real,0.502755,0.501955,0.503555,"p ± 1,96·raiz(p(1-p)/n)",n = 1500096 bits
+frac1,coleta 3 lote 2 QPU real,0.504836,0.504036,0.505636,"p ± 1,96·raiz(p(1-p)/n)",n = 1500096 bits
+frac1,coleta 3 lote 1 simulador,0.503409,0.502609,0.504209,"p ± 1,96·raiz(p(1-p)/n)",n = 1500096 bits
+frac1,coleta 3 lote 2 simulador,0.503724,0.502924,0.504525,"p ± 1,96·raiz(p(1-p)/n)",n = 1500096 bits
+deriva_dp,mesmo_dia: cal_001 x cal_002,1.44718,1.16078,1.72305,bootstrap de 5000 sobre os 156 qubits,|z|>3: 6 (esperado 0.42 se só houvesse amostragem)
+deriva_dp,mesmo_dia: cal_001 x coleta1_001,1.61543,1.08535,2.13484,bootstrap de 5000 sobre os 156 qubits,|z|>3: 5 (esperado 0.42 se só houvesse amostragem)
+deriva_dp,mesmo_dia: cal_001 x coleta1_002,1.56718,1.15081,1.98391,bootstrap de 5000 sobre os 156 qubits,|z|>3: 6 (esperado 0.42 se só houvesse amostragem)
+deriva_dp,mesmo_dia: cal_002 x coleta1_001,1.26427,1.04203,1.51889,bootstrap de 5000 sobre os 156 qubits,|z|>3: 2 (esperado 0.42 se só houvesse amostragem)
+deriva_dp,mesmo_dia: cal_002 x coleta1_002,1.12922,0.975847,1.28184,bootstrap de 5000 sobre os 156 qubits,|z|>3: 2 (esperado 0.42 se só houvesse amostragem)
+deriva_dp,mesmo_dia: coleta1_001 x coleta1_002,1.14454,0.993936,1.28432,bootstrap de 5000 sobre os 156 qubits,|z|>3: 3 (esperado 0.42 se só houvesse amostragem)
+deriva_dp,coleta2_vs_coleta1: coleta1_001 x coleta1_002,1.14454,0.994504,1.29092,bootstrap de 5000 sobre os 156 qubits,|z|>3: 3 (esperado 0.42 se só houvesse amostragem)
+deriva_dp,coleta2_vs_coleta1: coleta1_001 x coleta2_001,3.27429,1.57766,4.59317,bootstrap de 5000 sobre os 156 qubits,|z|>3: 12 (esperado 0.42 se só houvesse amostragem)
+deriva_dp,coleta2_vs_coleta1: coleta1_001 x coleta2_002,3.37719,1.46068,4.81653,bootstrap de 5000 sobre os 156 qubits,|z|>3: 9 (esperado 0.42 se só houvesse amostragem)
+deriva_dp,coleta2_vs_coleta1: coleta1_002 x coleta2_001,3.11121,1.49016,4.37528,bootstrap de 5000 sobre os 156 qubits,|z|>3: 10 (esperado 0.42 se só houvesse amostragem)
+deriva_dp,coleta2_vs_coleta1: coleta1_002 x coleta2_002,3.31292,1.51253,4.74645,bootstrap de 5000 sobre os 156 qubits,|z|>3: 11 (esperado 0.42 se só houvesse amostragem)
+deriva_dp,coleta2_vs_coleta1: coleta2_001 x coleta2_002,1.13326,0.880977,1.45578,bootstrap de 5000 sobre os 156 qubits,|z|>3: 2 (esperado 0.42 se só houvesse amostragem)
+deriva_dp,coleta3_vs_coleta1: coleta1_001 x coleta1_002,1.14454,0.99407,1.28784,bootstrap de 5000 sobre os 156 qubits,|z|>3: 3 (esperado 0.42 se só houvesse amostragem)
+deriva_dp,coleta3_vs_coleta1: coleta1_001 x coleta3_001,3.0635,1.5606,4.2779,bootstrap de 5000 sobre os 156 qubits,|z|>3: 12 (esperado 0.42 se só houvesse amostragem)
+deriva_dp,coleta3_vs_coleta1: coleta1_001 x coleta3_002,3.06697,1.56985,4.23391,bootstrap de 5000 sobre os 156 qubits,|z|>3: 14 (esperado 0.42 se só houvesse amostragem)
+deriva_dp,coleta3_vs_coleta1: coleta1_002 x coleta3_001,2.96524,1.61821,4.04271,bootstrap de 5000 sobre os 156 qubits,|z|>3: 11 (esperado 0.42 se só houvesse amostragem)
+deriva_dp,coleta3_vs_coleta1: coleta1_002 x coleta3_002,2.98326,1.65036,4.05798,bootstrap de 5000 sobre os 156 qubits,|z|>3: 11 (esperado 0.42 se só houvesse amostragem)
+deriva_dp,coleta3_vs_coleta1: coleta3_001 x coleta3_002,1.08887,0.962027,1.20451,bootstrap de 5000 sobre os 156 qubits,|z|>3: 1 (esperado 0.42 se só houvesse amostragem)
+e2_fp,"nominal 1-(1-0,01)^3",0.029701,,,aproximação: 3 testes independentes,os 3 testes sobre o mesmo lote não são independentes; serve como ordem de grandeza
+e2_fp,os. 1.000.000 bits,0.026,0.0194776,0.033957,Clopper-Pearson 95%,52 de 2000 lotes
+e2_fp,os. 4.000.000 bits,0.036,0.0214729,0.0563002,Clopper-Pearson 95%,18 de 500 lotes
+e3_razao,critério registrado: custo médio da QPU / mediana local,15.3976,12.9881,67.4232,faixa = execução local mais lenta e mais rápida,limiar 10
+e3_razao,custo marginal da QPU / mediana local,10.3737,8.75036,45.4244,ajuste por shot do e3_resumo,limiar 10; marginal = 2.2456 s/Mbit contra médio 3.3331
+e3_razao,custo marginal / mediana do grupo lento,10.1904,,,maior salto entre tempos ordenados separa dois grupos,6 execuções rápidas e 14 lentas; causa não investigada
+e4_hash_xor,base_boa,0.03,,,diferença hash menos xor na taxa de aprovação,"hash 97/100, xor 94/100; Fisher exato p = 0.498"
+e4_hash_xor,enviesada,-0.01,,,diferença hash menos xor na taxa de aprovação,"hash 97/100, xor 98/100; Fisher exato p = 1.000"
+e4_hash_xor,travada,0.01,,,diferença hash menos xor na taxa de aprovação,"hash 99/100, xor 98/100; Fisher exato p = 1.000"
+e4_hash_xor,constante,0.03,,,diferença hash menos xor na taxa de aprovação,"hash 98/100, xor 95/100; Fisher exato p = 0.445"
+e5_s,ideal_exato,2.82843,2.82843,2.82843,mínimo e máximo das repetições,n = 1; DP entre repetições 0.0000
+e5_s,ideal_amostrado,2.82879,2.77,2.8845,mínimo e máximo das repetições,n = 100; DP entre repetições 0.0243
+e5_s,ruido_fake_kingston,2.75906,2.7,2.821,mínimo e máximo das repetições,n = 100; DP entre repetições 0.0245
+e5_s,classico_aleatorio,-0.000685,-0.0775,0.093,mínimo e máximo das repetições,n = 100; DP entre repetições 0.0310
+e5_s,classico_otimo,2,2,2,mínimo e máximo das repetições,n = 100; DP entre repetições 0.0000

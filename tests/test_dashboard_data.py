@@ -45,6 +45,23 @@ def test_min_entropia_exige_limiar_unico():
         data.min_entropia(df)
 
 
+def test_resolve_receipts_usa_a_real_so_com_log_e_chave(tmp_path):
+    rec, keys, demo_r, demo_k = tmp_path / "r", tmp_path / "k", tmp_path / "dr", tmp_path / "dk"
+    assert data.resolve_receipts(rec, keys, demo_r, demo_k) == (demo_r, demo_k, True)  # nada existe
+    rec.mkdir(); keys.mkdir()
+    (rec / "chain.jsonl").write_bytes(b"{}" + bytes([10]))
+    assert data.resolve_receipts(rec, keys, demo_r, demo_k)[2] is True  # log sem chave pública
+    (keys / "issuer_ml_dsa_65.pk").write_bytes(b"x")
+    assert data.resolve_receipts(rec, keys, demo_r, demo_k) == (rec, keys, False)
+    (rec / "chain.jsonl").write_bytes(b"")
+    assert data.resolve_receipts(rec, keys, demo_r, demo_k)[2] is True  # log vazio
+
+
+def test_cadeia_de_demonstracao_verifica():
+    v = data.verify_last(data.DEMO_RECEIPTS, data.DEMO_KEYS)
+    assert v.ok and v.chain_length == 3
+
+
 @real
 def test_lotes_reais_batem_com_o_consolidado():
     lotes = data.load_lotes()
@@ -53,6 +70,8 @@ def test_lotes_reais_batem_com_o_consolidado():
     assert r.loc["Sistema operacional", "Aprovados"] == 6
     assert r.loc["QPU real (ibm_kingston)", "Aprovados"] == 0
     assert r.loc["Simulador com ruído", "Simulada"] == "sim"
+    assert r.loc["Simulador com ruído", "Lotes distintos"] == 2  # semente fixa: os mesmos 2 lotes nas 3 coletas
+    assert r.loc["QPU real (ibm_kingston)", "Lotes distintos"] == 6
     h, limiar = data.min_entropia(lotes)
     assert limiar == 0.9 and h["h_estimada"].between(0.9, 1).all()
 

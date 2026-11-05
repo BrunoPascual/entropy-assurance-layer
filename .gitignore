@@ -12,3 +12,5 @@ data/public_keys/
 data/logs/*
 !data/logs/.gitkeep
 keys/*.pk
+
+demo/**/*.sk
