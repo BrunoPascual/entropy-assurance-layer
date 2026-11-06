@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITULO__</title>
+<style>
+:root{
+  --bg:#f6f5f2; --card:#ffffff; --ink:#1b1d22; --muted:#5c6270; --line:#e2e0da;
+  --one:#1b1d22; --zero:#ece9e2; --ok:#1f8a5b; --bad:#c2410c; --accent:#3b5bdb;
+  --lo:#2b6cb0; --hi:#d9480f; --mid:#d8d6d0; --live:#e03131;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#111317; --card:#1a1d23; --ink:#eceae4; --muted:#9aa0ab; --line:#2b2f37;
+    --one:#eceae4; --zero:#23272e; --ok:#3fbf86; --bad:#ff8a4c; --accent:#7c93ff;
+    --lo:#5aa2f0; --hi:#ff7a3d; --mid:#3a3f48; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1180px;margin:0 auto;padding:28px 16px 64px}
+h1{font-size:clamp(28px,4.4vw,46px);line-height:1.1;margin:6px 0 6px;letter-spacing:-.02em}
+h2{font-size:20px;margin:0 0 4px}
+p.sub{color:var(--muted);margin:0 0 18px;max-width:760px}
+.badge{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--card)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--live);animation:pulse 1.4s infinite}
+.badge.gravado .dot{background:var(--muted);animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(224,49,49,.6)}70%{box-shadow:0 0 0 10px rgba(224,49,49,0)}100%{box-shadow:0 0 0 0 rgba(224,49,49,0)}}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 22px}
+.chip{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:110px}
+.chip b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.chip span{font-size:12px;color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0;opacity:0;transform:translateY(8px);transition:opacity .6s,transform .6s}
+.card.on{opacity:1;transform:none}
+.steps{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 0}
+.step{flex:1 1 120px;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;color:var(--muted);transition:all .4s}
+.step.on{border-color:var(--accent);color:var(--ink);box-shadow:inset 0 -3px 0 var(--accent)}
+.step small{display:block;font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:820px){.grid2{grid-template-columns:1fr}}
+canvas{width:100%;height:auto;display:block;border-radius:8px;image-rendering:pixelated;background:var(--zero)}
+.legend{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+.ramp{height:10px;width:180px;border-radius:5px;background:linear-gradient(90deg,var(--lo),var(--mid),var(--hi))}
+svg text{fill:var(--muted);font-size:11px}
+#tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);padding:6px 9px;border-radius:6px;font-size:13px;opacity:0;transition:opacity .15s;z-index:5}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+td.r{white-space:nowrap}
+.mark{display:inline-block;width:24px;font-weight:800}
+.ok{color:var(--ok)} .bad{color:var(--bad)}
+tr.t{opacity:0;transition:opacity .35s}
+tr.t.on{opacity:1}
+.small{font-size:13px;color:var(--muted)}
+.verdict{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.vbox{border-radius:12px;padding:14px 18px;font-weight:800;font-size:22px;border:2px solid}
+.vbox.ok{border-color:var(--ok)} .vbox.bad{border-color:var(--bad)}
+.counter{font-variant-numeric:tabular-nums;font-weight:700}
+.hash{font-family:ui-monospace,Consolas,monospace;font-size:12px;word-break:break-all;color:var(--muted)}
+.sw{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-1px;border:1px solid var(--line)}
+html.estatico *{transition:none!important}
+ul.notes{margin:8px 0 0;padding-left:18px;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+  <span id="badge" class="badge"><span class="dot"></span><span id="badgeTxt">ao vivo</span></span>
+  <h1>Bits aleatórios de um computador quântico</h1>
+  <p class="sub">Cada qubit recebe uma porta Hadamard, que o deixa em superposição 50/50, e é medido. Cada medição vira um bit. A Entropy Assurance Layer testa esses bits antes de deixar que entrem numa chave criptográfica.</p>
+  <div class="chips" id="chips"></div>
+
+  <section class="card" id="c-steps">
+    <h2>O caminho do job</h2>
+    <div class="steps" id="steps"></div>
+  </section>
+
+  <section class="card" id="c-mosaic">
+    <h2>Os bits, como saíram do chip</h2>
+    <p class="small">Cada coluna é um qubit; cada linha, um disparo (shot). <span class="sw" style="background:var(--one)"></span> = 1, <span class="sw" style="background:var(--zero)"></span> = 0. Mostrando os primeiros <span id="mrows"></span> disparos de <span id="mshots"></span>.</p>
+    <canvas id="mosaic"></canvas>
+    <div class="legend"><span class="counter" id="bitcount">0</span> bits desenhados · fração de uns no lote inteiro: <b id="frac1"></b></div>
+  </section>
+
+  <section class="card" id="c-chip">
+    <h2>O chip: quanto cada qubit puxa para 0 ou para 1</h2>
+    <p class="small">Posição real dos qubits no processador (heavy-hex). A cor mostra P(1) de cada qubit no lote inteiro: azul puxa para 0, laranja puxa para 1. Passe o mouse sobre um qubit.</p>
+    <svg id="chip" role="img" aria-label="Mapa do chip com o viés de cada qubit" width="100%"></svg>
+    <div class="legend"><span id="lo"></span><span class="ramp"></span><span id="hi"></span><span>· um qubit perfeito ficaria cinza (P(1) = 0,5)</span></div>
+  </section>
+
+  <section class="card" id="c-tests">
+    <h2>Os testes de saúde da EAL</h2>
+    <p class="small">Os mesmos testes rodam sobre os bits da QPU e, para comparar, sobre a mesma quantidade de bits do gerador do sistema operacional.</p>
+    <table>
+      <thead><tr><th>Teste</th><th>O que verifica</th><th>QPU</th><th>Sistema operacional</th></tr></thead>
+      <tbody id="tests"></tbody>
+    </table>
+  </section>
+
+  <section class="card" id="c-verdict">
+    <div class="verdict">
+      <div class="vbox" id="vbox"></div>
+      <div style="flex:1 1 380px" id="vtext"></div>
+    </div>
+    <ul class="notes">
+      <li>Aprovado quer dizer que o lote não mostrou defeito nestes testes. Isso não prova que os bits são imprevisíveis.</li>
+      <li>O provedor da QPU conhece os bits que gerou; por isso a EAL nunca usa a QPU como única fonte de uma chave.</li>
+      <li>Protótipo de pesquisa; sem certificação e sem alegação de "origem quântica" garantida.</li>
+    </ul>
+    <p class="hash" id="hash"></p>
+  </section>
+</main>
+<div id="tip"></div>
+<script id="dados" type="application/json">__DADOS__</script>
+<script>
+(function(){
+const D = JSON.parse(document.getElementById('dados').textContent);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmt = (x,d) => x==null ? '–' : Number(x).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const int = x => Number(x).toLocaleString('pt-BR');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches || location.hash === '#estatico';
+if (location.hash === '#estatico') document.documentElement.classList.add('estatico');
+const wait = ms => new Promise(r => setTimeout(r, reduce ? 0 : ms));
+
+// cabeçalho
+const gravado = D.modo !== 'ao vivo';
+if (gravado){ document.getElementById('badge').classList.add('gravado'); document.getElementById('badgeTxt').textContent = 'gravado (ensaio)'; }
+const chips = [
+  [D.backend, 'processador IBM'], [int(D.n_qubits), 'qubits'], [int(D.shots), 'disparos'],
+  [int(D.n_bits), 'bits'],
+  [D.segundos_qpu==null ? '–' : fmt(D.segundos_qpu,0)+' s', 'de QPU cobrados'],
+  [D.espera_s==null ? '–' : fmt(D.espera_s,0)+' s', 'do envio ao resultado'],
+];
+document.getElementById('chips').innerHTML = chips.map(([b,s]) => `<div class="chip"><b>${b}</b><span>${s}</span></div>`).join('');
+
+// passos
+const steps = [
+  ['Circuito', `Hadamard em ${D.n_qubits} qubits`], ['Fila da IBM', 'aguardando a vez no chip'],
+  ['Execução', `${int(D.shots)} disparos`], ['Bits recebidos', `${int(D.n_bits)} bits`],
+  ['Testes da EAL', '7 verificações'], ['Veredito', 'entra ou não numa chave'],
+];
+const stepsEl = document.getElementById('steps');
+stepsEl.innerHTML = steps.map(([t,s]) => `<div class="step">${t}<small>${s}</small></div>`).join('');
+
+// mosaico
+function drawMosaic(){
+  const M = D.mosaico, cv = document.getElementById('mosaic');
+  document.getElementById('mrows').textContent = int(M.linhas);
+  document.getElementById('mshots').textContent = int(D.shots);
+  document.getElementById('frac1').textContent = fmt(D.frac1,4);
+  const cell = 5; cv.width = M.colunas*cell; cv.height = M.linhas*cell;
+  const ctx = cv.getContext('2d'); ctx.fillStyle = css('--zero'); ctx.fillRect(0,0,cv.width,cv.height);
+  const raw = atob(M.b64); const bit = i => (raw.charCodeAt(i>>3) >> (7-(i&7))) & 1;
+  const one = css('--one'); const counter = document.getElementById('bitcount');
+  if (reduce){
+    ctx.fillStyle = one;
+    for (let r=0; r<M.linhas; r++) for (let c=0; c<M.colunas; c++) if (bit(r*M.colunas+c)) ctx.fillRect(c*cell, r*cell, cell, cell);
+    counter.textContent = int(M.linhas*M.colunas); return Promise.resolve();
+  }
+  return new Promise(res => {
+    let r = 0; const perFrame = 1;
+    (function frame(){
+      for (let k=0; k<perFrame && r<M.linhas; k++, r++){
+        for (let c=0; c<M.colunas; c++) if (bit(r*M.colunas+c)){ ctx.fillStyle = one; ctx.fillRect(c*cell, r*cell, cell, cell); }
+      }
+      counter.textContent = int(r*M.colunas);
+      if (r < M.linhas) requestAnimationFrame(frame); else res();
+    })();
+  });
+}
+
+// mapa do chip
+function mix(a,b,t){ const pa=a.match(/\w\w/g).map(h=>parseInt(h,16)), pb=b.match(/\w\w/g).map(h=>parseInt(h,16));
+  return '#'+pa.map((v,i)=>Math.round(v+(pb[i]-v)*t).toString(16).padStart(2,'0')).join(''); }
+function drawChip(){
+  const Q = D.qubits, svg = document.getElementById('chip');
+  const devs = Q.map(q => Math.abs(q.p1-0.5)).sort((a,b)=>a-b);
+  const span = Math.max(0.01, devs[Math.floor(devs.length*0.95)] || 0.01);
+  document.getElementById('lo').textContent = 'P(1) ' + fmt(0.5-span,3);
+  document.getElementById('hi').textContent = fmt(0.5+span,3);
+  const lo = css('--lo'), hi = css('--hi'), mid = css('--mid');
+  const color = p => { const t = Math.max(-1, Math.min(1, (p-0.5)/span)); return t<0 ? mix(mid,lo,-t) : mix(mid,hi,t); };
+  const xs = Q.map(q=>q.x), ys = Q.map(q=>q.y), s = 44, sy = 76, pad = 26;
+  const W = (Math.max(...xs)-Math.min(...xs))*s + 2*pad, H = (Math.max(...ys)-Math.min(...ys))*sy + 2*pad;
+  const X = x => pad + (x-Math.min(...xs))*s, Y = y => pad + (y-Math.min(...ys))*sy;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const byQ = Object.fromEntries(Q.map(q=>[q.q,q]));
+  let out = D.arestas.map(([a,b]) => byQ[a]&&byQ[b] ? `<line x1="${X(byQ[a].x)}" y1="${Y(byQ[a].y)}" x2="${X(byQ[b].x)}" y2="${Y(byQ[b].y)}" stroke="${css('--line')}" stroke-width="3"/>` : '').join('');
+  out += Q.map((q,i) => `<circle data-i="${i}" cx="${X(q.x)}" cy="${Y(q.y)}" r="0" fill="${color(q.p1)}" stroke="${css('--card')}" stroke-width="2"><animate attributeName="r" from="0" to="13" begin="${reduce?0:(i*0.008).toFixed(3)}s" dur="0.35s" fill="freeze"/></circle>`).join('');
+  svg.innerHTML = out;
+  const tip = document.getElementById('tip');
+  svg.addEventListener('mousemove', e => { const i = e.target.dataset && e.target.dataset.i; if (i==null){ tip.style.opacity=0; return; }
+    const q = Q[+i]; tip.innerHTML = `qubit ${q.q}<br>P(1) = ${fmt(q.p1,4)}<br>z = ${fmt(q.z,1)}`;
+    tip.style.left = (e.clientX+14)+'px'; tip.style.top = (e.clientY+14)+'px'; tip.style.opacity = 1; });
+  svg.addEventListener('mouseleave', () => tip.style.opacity = 0);
+}
+
+// testes
+const mark = ok => ok ? '<span class="mark ok">✓</span>' : '<span class="mark bad">✗</span>';
+async function showTests(){
+  const body = document.getElementById('tests');
+  body.innerHTML = D.qpu.testes.map((t,i) => { const o = D.os.testes[i];
+    return `<tr class="t"><td><b>${t.nome}</b></td><td class="small">${t.o_que}</td><td class="r">${mark(t.ok)} <span class="small">${t.valor}</span></td><td class="r">${mark(o.ok)} <span class="small">${o.valor}</span></td></tr>`; }).join('');
+  for (const tr of body.querySelectorAll('tr')){ await wait(420); tr.classList.add('on'); }
+}
+
+function verdict(){
+  const ok = D.qpu.aprovado, vb = document.getElementById('vbox');
+  vb.className = 'vbox ' + (ok ? 'ok' : 'bad');
+  vb.textContent = ok ? 'QPU: lote aprovado' : 'QPU: lote reprovado';
+  const pct = fmt(Math.abs(D.frac1-0.5)*100, 2);
+  const falhas = D.qpu.testes.filter(t=>!t.ok).map(t=>t.nome);
+  document.getElementById('vtext').innerHTML = ok
+    ? `<p>Os ${int(D.n_bits)} bits da QPU passaram nos 7 testes. Na EAL, este lote poderia entrar na mistura, <b>sempre junto</b> com uma fonte local, nunca sozinho.</p>`
+    : `<p>A fração de uns foi ${fmt(D.frac1,4)}: um desvio de ${pct} ponto percentual de 50/50. Parece nada, mas com ${int(D.n_bits)} bits ele é estatisticamente visível (z = ${fmt(D.z_total,1)}). Falhou em: ${falhas.join(', ')}.</p><p><b>A EAL exclui o lote</b>, registra o motivo no recibo e não deixa esses bits entrarem numa chave. É exatamente o papel dela: confiar na fonte só depois de testar.</p>`;
+  document.getElementById('hash').textContent = `job ${D.job_id} · calibração ${D.calibracao} · lote ${D.criado_em} · SHA3-256 do lote ${D.batch_hash}` + (D.duplicado_de ? ` · ATENÇÃO: bits idênticos a ${D.duplicado_de}` : (D.duplicado_verificado ? ' · bits diferentes de todos os lotes anteriores' : ''));
+}
+
+(async function play(){
+  const on = id => document.getElementById(id).classList.add('on');
+  const stepEls = [...stepsEl.children];
+  on('c-steps');
+  for (let i=0;i<4;i++){ await wait(450); stepEls[i].classList.add('on'); }
+  await wait(300); on('c-mosaic'); await drawMosaic();
+  await wait(300); on('c-chip'); drawChip(); await wait(reduce?0:1700);
+  stepEls[4].classList.add('on'); on('c-tests'); await showTests();
+  await wait(500); stepEls[5].classList.add('on'); verdict(); on('c-verdict');
+})();
+})();
+</script>
+</body>
+</html>

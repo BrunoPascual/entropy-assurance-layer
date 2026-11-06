@@ -46,6 +46,18 @@ py -3.12 -m streamlit run dashboard/app.py
 
 Abre em http://localhost:8501. Mostra fontes, saúde por lote, min-entropia, viés por qubit, o último recibo (com botão de verificação) e os experimentos E1 a E5. Num clone limpo não há cadeia real, e o painel usa a cadeia de demonstração de `demo/`, avisando na tela.
 
+## Demo ao vivo (apresentação)
+
+Envia um job real à QPU da IBM (Hadamard em 156 qubits, 9.616 disparos, cerca de 5 s de QPU), espera o tempo que a fila exigir, roda os testes de saúde da EAL sobre os bits (e, para comparar, sobre a mesma quantidade de bits da fonte `os`) e abre uma página no navegador com o mosaico de bits, o mapa do chip e o veredito:
+
+```
+py -3.12 -m scripts.demo_ao_vivo                 # mostra o plano, pede SIM, envia, espera e abre
+py -3.12 -m scripts.demo_ao_vivo --job JOB_ID    # se a espera for interrompida, retoma sem reenviar
+py -3.12 -m scripts.demo_ao_vivo --arquivo data\raw\<lote>.npy   # ensaio sem QPU, com um lote já salvo
+```
+
+Precisa do token no `.env` (ver abaixo) e usa as mesmas travas de orçamento e o mesmo log da coleta. A página fica em `ao_vivo/` (fora do Git) e diz "gravado (ensaio)" quando vem de `--arquivo`. Para conferir a página sem animação, abra-a com `#estatico` no fim do endereço.
+
 ## Gerar chaves e recibo (CLI)
 
 ```

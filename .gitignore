@@ -14,3 +14,4 @@ data/logs/*
 keys/*.pk
 
 demo/**/*.sk
+ao_vivo/
