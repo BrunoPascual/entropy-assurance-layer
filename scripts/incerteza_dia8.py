@@ -8,7 +8,9 @@ Nada é digitado à mão. Cada bloco responde a uma pergunta que a revisão leva
   deriva_dp    O desvio-padrão do zdiff entre lotes passa de 1 por acaso? (bootstrap sobre os qubits)
   e2_fp        O falso positivo da `os` é o que os alfas dos testes prevêem?
   e3_razao     A razão de custo QPU/os resiste ao custo marginal e à máquina lenta?
+  e3_ajuste    Quanto o arredondamento inteiro dos segundos da API move o custo marginal? (propagação exata de ±0,5 s)
   e4_hash_xor  A taxa de aprovação do hash difere da do XOR? (Fisher exato)
+  e4_poder     Que poder tem o Fisher exato com 100 sequências por braço para uma diferença de 10 pontos percentuais?
   e5_s         A faixa de S em cada configuração.
 
 Uso (na raiz do projeto): py -3.12 -m scripts.incerteza_dia8
@@ -33,6 +35,10 @@ BOOT_SEED = 20261104
 TOL_DP = 1e-6  # o dp recalculado precisa bater com o registrado
 ALFA_TESTE = 0.01  # nível de cada um dos 3 testes SP 800-22 do pipeline
 N_TESTES = 3
+ARRED_S = 0.5  # a API entrega quantum_seconds inteiros: o valor verdadeiro está a até 0,5 s do registrado
+ALFA_E4 = 0.05
+DIF_E4 = 0.10
+PODER_E4 = ((0.97, "perto de 0,97"), (0.95, "perto de 0,95"), (0.90, "perto de 0,90"))  # taxa do braço de cima; o outro fica 10 pp abaixo
 FONTES = {"qpu_real": "QPU real", "simulador": "simulador", "os": "os"}
 
 
@@ -161,7 +167,33 @@ def bloco_e3(results: Path) -> list[dict]:
     rapidos, lentos = np.sort(s_mbit)[:corte], np.sort(s_mbit)[corte:]
     rows.append(_row("e3_razao", "custo marginal / mediana do grupo lento", marginal_qpu / float(np.median(lentos)), None, None,
                      "maior salto entre tempos ordenados separa dois grupos", f"{len(rapidos)} execuções rápidas e {len(lentos)} lentas; causa não investigada"))
+    rows += _ajuste_marginal(res, _csv(results, "e3_qpu.csv"), qubits, med, rapido, lento, limiar)
     return rows
+
+
+def _ajuste_marginal(res: pd.Series, qpu: pd.DataFrame, qubits: int, med: float, rapido: float, lento: float, limiar: float) -> list[dict]:
+    """Propaga ±0,5 s de arredondamento dos segundos inteiros da API até o custo marginal.
+
+    O ajuste por mínimos quadrados é linear nos segundos: b = sum(w_i y_i), com w_i = (x_i - x̄)/Sxx. Cada y_i pode
+    estar a até ARRED_S do registrado, então b varia no máximo ARRED_S * sum|w_i| (pior caso exato, não simulação).
+    """
+    x = qpu["shots"].to_numpy(float)
+    y = qpu["quantum_seconds"].to_numpy(float)
+    w = (x - x.mean()) / ((x - x.mean()) ** 2).sum()
+    b = float((w * y).sum())
+    if abs(b - float(res["ajuste_por_shot_s"])) > 1e-7:
+        raise ValueError(f"ajuste recalculado {b} difere do registrado {res['ajuste_por_shot_s']}")
+    db = ARRED_S * float(np.abs(w).sum())
+    marg = [(b + d) / qubits * 1e6 for d in (0.0, -db, db)]
+    n_tam = len(set(x))
+    obs = f"{len(x)} jobs em {n_tam} tamanhos; ±{ARRED_S} s por job; pior caso exato do ajuste linear"
+    return [
+        _row("e3_ajuste", "ajuste marginal da QPU (s/Mbit)", marg[0], marg[1], marg[2], "propagação de ±0,5 s nos segundos inteiros", obs),
+        _row("e3_ajuste", "razão marginal / mediana local (incerteza do ajuste)", marg[0] / med, marg[1] / med, marg[2] / med,
+             "mesma propagação; mediana local fixa", f"limiar {limiar:g}; {obs}"),
+        _row("e3_ajuste", "razão marginal / mais lenta (incerteza do ajuste)", marg[0] / lento, marg[1] / lento, marg[2] / lento,
+             "mesma propagação; execução local mais lenta", f"limiar {limiar:g}"),
+    ]
 
 
 # ---------------------------------------------------------------- E4
@@ -175,8 +207,25 @@ def bloco_e4(results: Path) -> list[dict]:
         kh, kx, n = int(h["n_aprovadas"]), int(x["n_aprovadas"]), int(h["n_seq"])
         p = float(stats.fisher_exact([[kh, n - kh], [kx, n - kx]]).pvalue)
         rows.append(_row("e4_hash_xor", cen, (kh - kx) / n, None, None, "diferença hash menos xor na taxa de aprovação",
-                         f"hash {kh}/{n}, xor {kx}/{n}; Fisher exato p = {p:.3f}"))
+                         f"hash {kh}/{n}, xor {kx}/{n}; Fisher exato p = {p:.4f}"))
     return rows
+
+
+def poder_fisher(p1: float, p2: float, n: int, alfa: float = ALFA_E4) -> float:
+    """Poder exato do teste de Fisher bilateral (n por braço): P(p <= alfa) sob Binomial(n, p1) contra Binomial(n, p2)."""
+    ks = np.arange(n + 1)
+    rej = np.array([[stats.fisher_exact([[a, n - a], [b, n - b]]).pvalue <= alfa for b in ks] for a in ks])
+    pa, pb = stats.binom.pmf(ks, n, p1), stats.binom.pmf(ks, n, p2)
+    return float((pa[:, None] * pb[None, :] * rej).sum())
+
+
+def bloco_e4_poder(results: Path) -> list[dict]:
+    """Poder de enxergar uma diferença de 10 pp entre hash e XOR, com o n do experimento."""
+    d = _csv(results, "e4_resumo.csv")
+    n = int(d[d["cenario"] == "base_boa"]["n_seq"].iloc[0])
+    return [_row("e4_poder", f"{rot}: {a:.2f} contra {a - DIF_E4:.2f}", poder_fisher(a, a - DIF_E4, n), None, None,
+                 f"Fisher exato bilateral, alfa {ALFA_E4}, cálculo exato sobre Binomial(n, p)", f"n = {n} por braço; diferença de {DIF_E4 * 100:.0f} pontos percentuais")
+            for a, rot in PODER_E4]
 
 
 # ---------------------------------------------------------------- E5
@@ -187,7 +236,7 @@ def bloco_e5(results: Path) -> list[dict]:
                  f"n = {int(r['n_reps'])}; DP entre repetições {float(r['s_dp']):.4f}") for _, r in d.iterrows()]
 
 
-BLOCOS = (bloco_h_lotes, bloco_frac1, bloco_deriva, bloco_e2_fp, bloco_e3, bloco_e4, bloco_e5)
+BLOCOS = (bloco_h_lotes, bloco_frac1, bloco_deriva, bloco_e2_fp, bloco_e3, bloco_e4, bloco_e4_poder, bloco_e5)
 
 
 def calcular(results: Path = RESULTS) -> pd.DataFrame:

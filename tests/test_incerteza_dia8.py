@@ -72,5 +72,43 @@ def test_e4_hash_xor_nao_difere():
 @real
 def test_calcular_gera_todos_os_blocos():
     df = inc.calcular(inc.RESULTS)
-    assert set(df["bloco"]) == {"h_lotes", "frac1", "deriva_dp", "e2_fp", "e3_razao", "e4_hash_xor", "e5_s"}
+    assert set(df["bloco"]) == {"h_lotes", "frac1", "deriva_dp", "e2_fp", "e3_razao", "e3_ajuste", "e4_hash_xor", "e4_poder", "e5_s"}
     assert list(df.columns) == inc.COLUNAS
+
+
+@real
+def test_e4_p_exato_sai_com_4_casas_e_o_minimo_e_0_4448():
+    ps = [float(r["observacao"].split("p = ")[1]) for r in inc.bloco_e4(inc.RESULTS)]
+    assert min(ps) == pytest.approx(0.4448, abs=1e-4) and min(ps) < 0.445
+
+
+def test_poder_fisher_conhecido_e_sem_diferenca_nao_passa_do_alfa():
+    assert inc.poder_fisher(0.95, 0.85, 100) == pytest.approx(0.586, abs=2e-3)
+    assert inc.poder_fisher(0.90, 0.80, 100) == pytest.approx(0.444, abs=2e-3)
+    assert inc.poder_fisher(0.9, 0.9, 30) <= inc.ALFA_E4  # Fisher é conservador: nunca excede o alfa
+    assert inc.poder_fisher(0.99, 0.30, 30) > 0.99
+
+
+@real
+def test_bloco_e4_poder_abaixo_de_80_por_cento_com_n_100():
+    rows = inc.bloco_e4_poder(inc.RESULTS)
+    assert len(rows) == 3 and all(0.4 < r["estimativa"] < 0.8 for r in rows)
+    assert "n = 100" in rows[0]["observacao"]
+
+
+@real
+def test_ajuste_marginal_propaga_meio_segundo_e_bate_com_os_cantos():
+    r = {x["item"]: x for x in inc.bloco_e3(inc.RESULTS)}
+    c = r["ajuste marginal da QPU (s/Mbit)"]
+    assert c["estimativa"] == pytest.approx(2.2456, abs=1e-3)
+    assert (round(c["ic_inf"], 2), round(c["ic_sup"], 2)) == (1.40, 3.10)
+    # força bruta: ±0,5 s em cada job, todos os 2^8 cantos; o extremo do ajuste linear está num canto
+    q = pd.read_csv(inc.RESULTS / "e3_qpu.csv")
+    x, y = q["shots"].to_numpy(float), q["quantum_seconds"].to_numpy(float)
+    bs = []
+    for m in range(2 ** len(y)):
+        d = np.array([0.5 if m >> i & 1 else -0.5 for i in range(len(y))])
+        bs.append(np.polyfit(x, y + d, 1)[0] / 156 * 1e6)
+    assert min(bs) == pytest.approx(c["ic_inf"], rel=1e-6) and max(bs) == pytest.approx(c["ic_sup"], rel=1e-6)
+    razao = r["razão marginal / mediana local (incerteza do ajuste)"]
+    assert razao["ic_inf"] < 10 < razao["ic_sup"] and 6.4 < razao["ic_inf"] < 6.5 and 14.2 < razao["ic_sup"] < 14.4

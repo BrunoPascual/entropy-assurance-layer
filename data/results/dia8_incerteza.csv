@@ -39,10 +39,16 @@ e2_fp,os. 4.000.000 bits,0.036,0.0214729,0.0563002,Clopper-Pearson 95%,18 de 500
 e3_razao,critério registrado: custo médio da QPU / mediana local,15.3976,12.9881,67.4232,faixa = execução local mais lenta e mais rápida,limiar 10
 e3_razao,custo marginal da QPU / mediana local,10.3737,8.75036,45.4244,ajuste por shot do e3_resumo,limiar 10; marginal = 2.2456 s/Mbit contra médio 3.3331
 e3_razao,custo marginal / mediana do grupo lento,10.1904,,,maior salto entre tempos ordenados separa dois grupos,6 execuções rápidas e 14 lentas; causa não investigada
-e4_hash_xor,base_boa,0.03,,,diferença hash menos xor na taxa de aprovação,"hash 97/100, xor 94/100; Fisher exato p = 0.498"
-e4_hash_xor,enviesada,-0.01,,,diferença hash menos xor na taxa de aprovação,"hash 97/100, xor 98/100; Fisher exato p = 1.000"
-e4_hash_xor,travada,0.01,,,diferença hash menos xor na taxa de aprovação,"hash 99/100, xor 98/100; Fisher exato p = 1.000"
-e4_hash_xor,constante,0.03,,,diferença hash menos xor na taxa de aprovação,"hash 98/100, xor 95/100; Fisher exato p = 0.445"
+e3_ajuste,ajuste marginal da QPU (s/Mbit),2.24561,1.39517,3.09605,"propagação de ±0,5 s nos segundos inteiros",8 jobs em 3 tamanhos; ±0.5 s por job; pior caso exato do ajuste linear
+e3_ajuste,razão marginal / mediana local (incerteza do ajuste),10.3738,6.44514,14.3025,mesma propagação; mediana local fixa,limiar 10; 8 jobs em 3 tamanhos; ±0.5 s por job; pior caso exato do ajuste linear
+e3_ajuste,razão marginal / mais lenta (incerteza do ajuste),8.75048,5.43657,12.0644,mesma propagação; execução local mais lenta,limiar 10
+e4_hash_xor,base_boa,0.03,,,diferença hash menos xor na taxa de aprovação,"hash 97/100, xor 94/100; Fisher exato p = 0.4977"
+e4_hash_xor,enviesada,-0.01,,,diferença hash menos xor na taxa de aprovação,"hash 97/100, xor 98/100; Fisher exato p = 1.0000"
+e4_hash_xor,travada,0.01,,,diferença hash menos xor na taxa de aprovação,"hash 99/100, xor 98/100; Fisher exato p = 1.0000"
+e4_hash_xor,constante,0.03,,,diferença hash menos xor na taxa de aprovação,"hash 98/100, xor 95/100; Fisher exato p = 0.4448"
+e4_poder,"perto de 0,97: 0.97 contra 0.87",0.693873,,,"Fisher exato bilateral, alfa 0.05, cálculo exato sobre Binomial(n, p)",n = 100 por braço; diferença de 10 pontos percentuais
+e4_poder,"perto de 0,95: 0.95 contra 0.85",0.585972,,,"Fisher exato bilateral, alfa 0.05, cálculo exato sobre Binomial(n, p)",n = 100 por braço; diferença de 10 pontos percentuais
+e4_poder,"perto de 0,90: 0.90 contra 0.80",0.444153,,,"Fisher exato bilateral, alfa 0.05, cálculo exato sobre Binomial(n, p)",n = 100 por braço; diferença de 10 pontos percentuais
 e5_s,ideal_exato,2.82843,2.82843,2.82843,mínimo e máximo das repetições,n = 1; DP entre repetições 0.0000
 e5_s,ideal_amostrado,2.82879,2.77,2.8845,mínimo e máximo das repetições,n = 100; DP entre repetições 0.0243
 e5_s,ruido_fake_kingston,2.75906,2.7,2.821,mínimo e máximo das repetições,n = 100; DP entre repetições 0.0245
