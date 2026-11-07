@@ -120,6 +120,8 @@ docs/           one-pager and roadmap
 - The real QPU's batches **did not pass** the health gate; none of its bits went into a seed. The result speaks to the batch size and the chosen criterion, not to the QPU's quality.
 - The tests look only at the output: a disguised pseudorandom generator passes.
 - The QPU provider knows the bits it generated.
+- Removal of the end of the receipt chain and erasure of the replay history (N13 and N14 in the threat model) are not detected unless `--expected-head` is used with a chain head stored outside the log (and, for replay, with the history file intact).
+- The dashboard and the live demo page are in Portuguese.
 - Full list in the report (section 5) and in section 17 of `PROJECT.md`.
 
 ## License

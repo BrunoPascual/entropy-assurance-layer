@@ -81,7 +81,7 @@ Third-party libraries (qiskit, numpy, scipy, pure-Python PQC): trusted, not audi
 | T1 | Bias or correlation in the source | ADV1 | APT, MCV estimator per bit and per byte, extractor sized by the estimated entropy | E1, E2, unit tests | Low for gross bias; medium for subtle correlations |
 | T2 | Stuck bits | ADV1 | RCT | E2, tests with a known sequence | Low |
 | T3 | Batch or block replay | ADV3 | Hash of each batch and of 4096-bit blocks; the history is kept in `data/logs/replay_history.json` and loaded before any source read, so it rejects repetition within one run and across runs (F12, Day 6) | E2; F12 tests | Low for exact replay; **deleting or swapping the history file resets the protection with no alarm**; high for transformed replay; replay shifted outside a 4096-bit block is not detected |
-| T4 | Classical generator disguised as a QPU | ADV3 | Not detectable by output tests. Structural mitigation: a local source is mandatory in the mix; CHSH as a sanity check | E2, E5 | **High**, declared as a limitation |
+| T4 | Classical generator disguised as a QPU | ADV3 | Not detectable by output tests. Structural mitigation: a local source is mandatory in the mix; CHSH as a sanity check (done only in simulation, with no QPU run, so it says nothing about the real QPU) | E2, E5 | **High**, declared as a limitation |
 | T5 | Provider knows the bits | ADV2 | Policy: ≥ 1 approved, non-simulated local source in every seed | Policy test in the mixer | Low, if the host is intact |
 | T6 | Adaptive source cancels the mix | ADV6 | Combination via SHA3-512 with domain separation (not XOR) | E4 | Low, under assumption P2 |
 | T7 | Source drift over time | ADV1 | Continuous tests on every batch; comparison across sessions | E1 | Medium |
@@ -105,7 +105,7 @@ Each guarantee holds **only** under the assumptions in section 8.
 | --- | --- | --- |
 | G1 | Gross source failures (stuck bits, bias persisting above the threshold, batch repetition) are detected per batch, with a false-alarm rate of `α = 2^-40` per sample in the RCT and `α = 2^-20` per window in the APT (about 5 × 10^-7 and 8 × 10^-4 per batch of 1 million bits), by the test's design | Declared entropy `H` correct for the source |
 | G2 | **Fail-closed:** without at least one approved, non-simulated local source, no seed and no key are generated | Mixer policy unchanged |
-| G3 | The seed is unpredictable to anyone who does not know the approved local source's output, **including the QPU provider** | P1, P2, P3 |
+| G3 | **Conditional on P1 to P3** (not an unconditional guarantee): if the host is intact, the combined sources are independent and SHA3-512 behaves as an ideal function, and `os` is cryptographically strong, then the seed should be unpredictable to anyone who does not know the approved local source's output, **including the QPU provider**. If any of the three fails, nothing is guaranteed | P1, P2, P3 |
 | G4 | Every receipt is signed with ML-DSA-65 and chained to the previous one; alteration of a receipt or of the middle of the chain is detected by `eal verify`. Removal of the last receipts is only detected if the verifier holds the chain head stored outside the log (`--expected-head`); without it, a chain missing its end still verifies as valid (see N13) | Issuer key not compromised; for removal from the end, head stored outside the log |
 | G5 | Receipts contain no secrets, only hashes | Code matches `PROJECT.md` |
 | G6 | Every seed has recorded provenance: sources, versions, job IDs, test results, estimates, and extractor parameters | — |

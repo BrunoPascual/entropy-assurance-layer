@@ -1,7 +1,7 @@
 # Entropy Assurance Layer (EAL) — Project Brief
 
 - **Document version:** 1.0
-- **Date:** 27/10/2026
+- **Date:** 27/10/2026 (created); updated on 07/11/2026 (Day 9 state)
 - **Author:** Bruno Pascual
 - **Status:** Day 9 of 9 (delivery). Days 1 to 7 are recorded below; the dashboard, report and critical review from Day 8, and the README, one-pager, roadmap and demonstration chain from Day 9, are at the end of this file
 - **Sibling document:** `THREAT_MODEL.md` (threat model)
@@ -449,15 +449,15 @@ Usage: `py -3.12 -m eal <comando>`. There is no `eal` executable (the project ha
 | `init-issuer [--bits N] [--keys-dir D] [--logs-dir D]` | A `keygen` run using only the `os` source; derives the issuer's ML-DSA-65 pair (`issuer_seed_from_mix`) and writes `keys/issuer_ml_dsa_65.sk` and `.pk`. Refuses if either one already exists | Step 4 |
 | `run [--sources os] [--bits N] [--keys-dir D] [--receipts-dir D] [--public-keys-dir D] [--logs-dir D]` | `keygen` pipeline with the `os` source, derived ML-KEM-768 and ML-DSA-65 keys, and a signed receipt written to the chained log | Step 4 |
 | `verify <arquivo> [--keys-dir D] [--chain-dir D] [--sem-cadeia] [--expected-head HASH]` | Verifies the receipt, the chain, and the receipt's position in it | Step 4 |
-| `collect-ibm --qubits 156 --shots 4096 --budget-seconds 30` | Collects on the real QPU with a hard limit | Doesn't exist yet (Day 6) |
-| `health data/raw/<arquivo>.npy` | Runs only the health tests on a file | Doesn't exist yet |
-| `experiment e2` | Runs an experiment | Doesn't exist yet (Day 7) |
+| `collect-ibm --qubits 156 --shots 4096 --budget-seconds 30` | Planned command; it does not exist under this name in `python -m eal`. Collection on the real QPU is done by a separate entry point, `scripts/coletar_ibm.py` (logic in `eal/ibm_cli.py`), with the commands `status`, `calibrar`, `enviar`, and `recuperar`, under the budget guard | Exists as `scripts/coletar_ibm.py` (Day 6) |
+| `health data/raw/<arquivo>.npy` | Runs only the health tests on a file | Does not exist as a command (the health tests run inside `run` and in the analysis scripts) |
+| `experiment e2` | Runs an experiment | Does not exist as a command; the experiments are scripts: `scripts/e2_ataques.py`, `scripts/e3_vazao_custo.py`, `scripts/e4_mistura.py`, and `scripts/e5_chsh.py` (Day 7) |
 
 **Exit codes.** 0: ok. 1: expected failure (fail-closed, refusal, rejected receipt or chain) or unexpected error, which is caught and shows only the exception's class name. 2: usage error (invalid option or command).
 
 **`init-issuer`.** The issuer's pair comes from its own `keygen` run, never from the seed of the user's keys. Without a seed (fail-closed), nothing is created.
 
-**`run`.** The order is: (1) loads the issuer key (without it: "rode `init-issuer`"); (2) checks the existing chain, and a corrupted log refuses BEFORE the pipeline; (3) runs the `keygen` pipeline a single time (without a seed: fail-closed, no automatic retry; `os` can be rejected by chance, as the Day 4 gate shows, and running again is a legitimate choice); (4) derives the keys, builds and signs the receipt, and writes it to the log; (5) writes ONLY the derived public keys to `data/public_keys/<receipt_id>/` (`ml_kem_768.ek.hex` and `ml_dsa_65.pk.hex`, in hex with a trailing `\n`, binary mode, without overwriting). If step 5 fails, the receipt is already in the log, and the message says so (exit code 1). The output brings `receipt_id`, the receipt's path, the seed hash, the public-key hashes, each source's status, and the `chain head`; keeping it outside the log allows using `--expected-head` later. `--sources` only accepts `os`: a simulated or faulty source is a usage error (T13), and the IBM source doesn't exist yet.
+**`run`.** The order is: (1) loads the issuer key (without it: "rode `init-issuer`"); (2) checks the existing chain, and a corrupted log refuses BEFORE the pipeline; (3) runs the `keygen` pipeline a single time (without a seed: fail-closed, no automatic retry; `os` can be rejected by chance, as the Day 4 gate shows, and running again is a legitimate choice); (4) derives the keys, builds and signs the receipt, and writes it to the log; (5) writes ONLY the derived public keys to `data/public_keys/<receipt_id>/` (`ml_kem_768.ek.hex` and `ml_dsa_65.pk.hex`, in hex with a trailing `\n`, binary mode, without overwriting). If step 5 fails, the receipt is already in the log, and the message says so (exit code 1). The output brings `receipt_id`, the receipt's path, the seed hash, the public-key hashes, each source's status, and the `chain head`; keeping it outside the log allows using `--expected-head` later. `--sources` only accepts `os`: a simulated or faulty source is a usage error (T13), and `run` does not take the IBM source (IBM collection is done separately, by `scripts/coletar_ibm.py`).
 
 **`verify`.** Checks, in this order: the issuer's public key (`--keys-dir`); the file; the receipt's format and signature; and, unless `--sem-cadeia` is given, the chain in the file's folder (or `--chain-dir`), with `--expected-head` if given. The receipt must be in the log, which is checked by canonical content, not by the file name. Without `chain.jsonl` in the folder, the error tells you to use `--chain-dir` or `--sem-cadeia`. With `--sem-cadeia` the output brings "AVISO: cadeia não conferida". On success it prints "recibo válido: <id>", "cadeia: posição X de N", and, with `--expected-head`, "cabeça conferida".
 
@@ -1011,7 +1011,7 @@ Done by reading the code, in parts, from the file the collector generates (`revi
 ### Day 6 limitations (G6: batch params)
 
 - Receipts prior to G6 don't have the `batch_params` block; verification accepts the absence, so they remain valid, but they don't prove the `job_id` of any collection.
-- The key names (`backend`, `job_id`, `shots`, `qubits`) and the formats (text up to 64 characters, integers from 1 to 10⁹) are this prototype's assumptions. The IBM adapter doesn't exist yet: the real names and formats of `job_id` and the qubit count need to be checked against the qiskit-ibm-runtime documentation before collection. If the provider uses another format, the receipt is rejected (fail-closed).
+- The key names (`backend`, `job_id`, `shots`, `qubits`) and the formats (text up to 64 characters, integers from 1 to 10⁹) are this prototype's assumptions. This note dates from before the Day 6 adapter (`eal/sources/qpu_ibm.py`) existed: the real names and formats of `job_id` and the qubit count need to be checked against the qiskit-ibm-runtime documentation before collection. If the provider uses another format, the receipt is rejected (fail-closed).
 - The `job_id` is stored in the clear in the receipt. It is not a secret, but it reveals that the job existed on the account.
 - The receipt proves the params that the code handed to the builder, not that the IBM API returned those values.
 
@@ -1037,7 +1037,7 @@ Done by reading the code, in parts, from the file the collector generates (`revi
 
 ### Day 5 limitations (step 4: command line)
 
-- `run` only accepts the `os` source. IBM collection (Day 6) doesn't exist yet, so the CLI does not mix `os` with another source.
+- `run` only accepts the `os` source. IBM collection (Day 6) is done outside `run`, by `scripts/coletar_ibm.py`, so the CLI does not mix `os` with another source.
 - With only `os`, an occasional fail-closed is possible (the block test already rejected `os` in one of the Day 4 gate's scenarios). The command does not retry on its own; running it again is the user's decision.
 - The `chain head` is printed by `run`, but the prototype doesn't store it anywhere: `--expected-head` only serves whoever wrote it down. Without that, deleting the last receipt remains undetectable (step 3's limitation).
 - Real receipts, derived public keys, the issuer's `.pk`, and the logs stay outside Git. Losing `data/receipts/` erases the evidence, and there is no backup. The Day 9 demonstration chain will go in its own folder, with a copy of the issuer's `.pk`.
@@ -1085,7 +1085,7 @@ Done by reading the code, in parts, from the file the collector generates (`revi
 Confirm the links and the API versions before relying on them; plans, prices, and APIs change.
 
 
-## 18. Day 6: calibration on the real QPU and pending items (record)
+## 20. Day 6: calibration on the real QPU and pending items (record)
 Calibration job: dbji1pgnceqs73ak2c8g, backend ibm_kingston, 156 qubits, 1000 shots, 20 s reserve, SamplerV2 (qiskit 2.6.1, qiskit-ibm-runtime 0.51.0).
 State: DONE. Billed usage: 2 s of QPU (usage() and qpu_charge_time_seconds). Created at 08:22 (São Paulo time) and already completed by the 11:26 inspection.
 Conversion validated with a real result: BitArray with 156 bits and 1000 shots; the adapter's conversion matches to_bool_array(order='little'). 156000 uint8 bits. Overall fraction of 1: 0,4971.
@@ -1103,7 +1103,7 @@ New limitations (section 17), not yet listed: a crash window between checking th
 <!-- coleta1-plano:start -->
 ### Frozen plan for collection 1 (Day 6, recorded before the first submission)
 
-Recorded on 01/11/2026 against commit dca8fb6. No parameter below changes after the first submission of collection 1 (section 6.5).
+Recorded on 01/11/2026 against commit dca8fb6. No parameter below changes after the first submission of collection 1 (this frozen plan is itself the rule; PROJECT.md has no separate section for it, and section 6.5 only fixes the H threshold of 0,9).
 
 - **Backend:** ibm_kingston.
 - **Qubits:** all 156 operational ones, with no exclusion. The decision was made when QPU output from the calibration jobs already existed; excluding any qubit now would mean choosing while looking at the data.
@@ -1263,7 +1263,7 @@ Stability of the qubits' p1 between batch pairs (zdiff, with different shot coun
 #### Limits of this analysis
 
 - One session, on a single day, on a single backend. The full E1 calls for sessions at other times and on other days (section 9.3); nothing here measures drift between days.
-- The fixed set and the criteria (testable, replicates, compatible magnitude) are hardcoded in `scripts/analisar_cal.py` and were fixed before reading the cal batches, based only on collection 1. One of the fixed set's positions (112, from pair 112-113) had already appeared among the columns furthest from 0,5 of `cal_001` in the section 18 record; the pair's correlation had not been seen.
+- The fixed set and the criteria (testable, replicates, compatible magnitude) are hardcoded in `scripts/analisar_cal.py` and were fixed before reading the cal batches, based only on collection 1. One of the fixed set's positions (112, from pair 112-113) had already appeared among the columns furthest from 0,5 of `cal_001` in the section 20 record; the pair's correlation had not been seen.
 - The cal batches are not in the inventory: their integrity is only the `batch_hash`. Collection 1 is also checked by the inventory's SHA-256.
 - The recorded readout-error snapshot and calibration date are those of submission, not of execution (R8). The four batches share the same readout-error snapshot.
 - `criado_em` is the moment the batch was saved; QPU execution times are not in the data and do not enter the conclusions.
@@ -1330,10 +1330,10 @@ The analysis is in the `dia6-e1parcial` block, right above.
 | T11 | secrets check (T11) over all the commits in the list above; the user has not yet confirmed its output for the commits made in this phase | before any new commit |
 | COLETA2 | collection 2 at another time of day, to measure drift (section 9.3): frozen plan in PROJECT.md before the first submission; only the user submits, with an explicit command and YES | next step |
 | DEP_SESSAO | inventario_coleta1.py, analisar_coleta1.py, and analisar_cal.py hardcode the coleta1 session (and the coleta1_ prefix); parameterize the session before analyzing collection 2 (changes code: needs a plan and approval) | before analyzing collection 2 |
-| R8 | record the execution's calibration snapshot in each batch; without it, drift by time and by calibration cannot be separated (the section 18 record says cal_001 ran under a calibration different from the date recorded in the batch) | before collection 2 |
+| R8 | record the execution's calibration snapshot in each batch; without it, drift by time and by calibration cannot be separated (the section 20 record says cal_001 ran under a calibration different from the date recorded in the batch) | before collection 2 |
 | CRITERIO_REPLICA | the 'replicates' criterion (same sign and \|z\| > 2) is weak: where the magnitude is incompatible, report 'direction reproduced, not the magnitude' | when writing the report |
 | R11 | reorganize sections 6.12, 9.3, 9.4, and 17 of PROJECT.md with the content of the blocks appended at the end (dia6-e1parcial and dia6-estado included) | before changing the Status |
-| R12 | PROJECT.md's Status field still says Day 5 of 9; update after R11 | after R11 |
+| R12 | PROJECT.md's Status field still says Day 5 of 9; update after R11 | after R11 (historical entry from Day 6; the Status field now says Day 9 of 9) |
 | BACKUP_RESULTADOS | copy data/results to C:\projeto\ancoras (the raw data already has a copy in coleta1_2026-11-01) | low |
 | COLETA3 | collection 3 (drift between days), section 9.3: user decision; comes before collection 2 in section 16's cutting order | decide before Day 7 |
 | R7 | copy data\logs\replay_history.json to C:\projeto\ancoras after the first real eal run | after the first real eal run |
@@ -1350,7 +1350,7 @@ Collection 2 session at another time of day, to measure drift (section 9.3). Fir
 <!-- coleta2-plano:start -->
 ### Frozen plan for collection 2 (Day 6, recorded before the first submission)
 
-Recorded on 01/11/2026 against commit e82e081. No parameter below changes after the first submission of collection 2 (section 6.5).
+Recorded on 01/11/2026 against commit e82e081. No parameter below changes after the first submission of collection 2 (this frozen plan is itself the rule; PROJECT.md has no separate section for it, and section 6.5 only fixes the H threshold of 0,9).
 
 - **Objective:** measure drift within the same day (section 9.3), comparing with collection 1.
 - **Backend, qubits, circuit, and `rep_delay`:** same as collection 1 (ibm_kingston; the 156 operational ones, no exclusion; `hadamard_all_measure` with SamplerV2; 0,00025 s).
@@ -1540,7 +1540,7 @@ Reference (accounting, not a measurement): 3 independent statistical tests with 
 <!-- coleta3-plano:start -->
 ### Frozen plan for collection 3 (Day 7, recorded before the first submission)
 
-Recorded on 02/11/2026 against commit 01666ec. No parameter below changes after the first submission of collection 3 (section 6.5).
+Recorded on 02/11/2026 against commit 01666ec. No parameter below changes after the first submission of collection 3 (this frozen plan is itself the rule; PROJECT.md has no separate section for it, and section 6.5 only fixes the H threshold of 0,9).
 
 - **Objective:** measure drift between days (section 9.3).
 - **Backend, qubits, circuit, and `rep_delay`:** same as collections 1 and 2 (ibm_kingston; the 156 operational ones, no exclusion; `hadamard_all_measure` with SamplerV2; 0,00025 s).
@@ -2041,7 +2041,7 @@ In the tables below, `-` marks an empty cell in the source CSV; the metrics back
 
 ---
 
-## 20. Day 8 and Day 9: dashboard, report, and delivery (record)
+## 21. Day 8 and Day 9: dashboard, report, and delivery (record)
 
 **Dashboard (`dashboard/`).** `data.py` (loading and validation, without Streamlit, tested) and `app.py` (one page: sources, health per batch, min-entropy, bias per qubit with drift, latest receipt with a verify button, E1 to E5). It reads only `data/results` and the receipts. On a clean clone there is no real chain, and it uses `demo/`, warning on screen. `streamlit==1.66.1` and `pandas==3.1.1` pinned. Dashboard gate: the server comes up (HTTP 200), the app runs without an exception on real data (tested with `AppTest`), and receipt verification passes on the real chain and rejects a tampered copy.
 
@@ -2049,7 +2049,7 @@ In the tables below, `-` marks an empty cell in the source CSV; the metrics back
 
 **Critical review (two passes).** One against the uncertainty ranges, and another from an independent reviewer, who received the report and the CSVs without the first pass's list. Fixed in the report and the dashboard:
 
-- E3: the QPU/os ratio is one of **time**, and the threshold of 10 falls within the range (the marginal cost and the slower local machine fall below 10); the uncertainty of the marginal fit was not measured.
+- E3: the QPU/os ratio is one of **time**, and the threshold of 10 falls within the range (the marginal cost alone is 10,37 and the mean on the slowest local machine is 12,99, both above 10; only the marginal cost together with the slowest local machine falls below 10, at 8,75); the uncertainty of the marginal fit was not measured.
 - Simulator: only 2 distinct batches (fixed seed) appear across the 3 collections; the count became 0 of 2.
 - The QPU's rejection is by monobit; runs rejects on a pre-requisite; min-entropy and block frequency approve. "No batch passed" describes the batch size and the chosen gate, not the QPU's quality.
 - Estimated H: the absolute value is the estimator's (`os` also comes out below 1); the exact 6-against-6 p is only a hint (batches not independent).
@@ -2060,4 +2060,4 @@ In the tables below, `-` marks an empty cell in the source CSV; the metrics back
 
 **Delivery (Day 9).** `README.md`, `docs/ONE_PAGER.md`, `docs/ROADMAP.md`, and `demo/` (3 chained receipts made by the CLI with an issuer key belonging only to the demo; only the public key was published; `demo/**/*.sk` is in `.gitignore`). Secrets sweep before delivery: no `.env`, private key, or token in versioned files or in the Git history.
 
-**Declared pending items.** FastAPI (optional) was not done. The 3-to-5-minute recorded demo depends on the author. The one-pager's market and competitor data come from section 3 of this brief and were not revalidated. There is no license set. E1 remains partial (collection 3 against collection 2) and E5, only at step A.
+**Declared pending items.** FastAPI (optional) was not done. The 3-to-5-minute recorded demo depends on the author. The one-pager's market and competitor data come from section 3 of this brief and were not revalidated. The license is resolved: MIT (`LICENSE`, Copyright 2026 Bruno Pascual, cited in `README.md`). E1 remains partial (collection 3 against collection 2) and E5, only at step A.
