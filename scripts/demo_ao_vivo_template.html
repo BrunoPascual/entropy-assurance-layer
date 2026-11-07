@@ -63,7 +63,7 @@ ul.notes{margin:8px 0 0;padding-left:18px;color:var(--muted);font-size:14px}
 </head>
 <body>
 <main>
-  <span id="badge" class="badge"><span class="dot"></span><span id="badgeTxt">ao vivo</span></span>
+  <span id="badge" class="badge"><span class="dot"></span><span id="badgeTxt">conferindo…</span></span>
   <h1>Bits aleatórios de um computador quântico</h1>
   <p class="sub">Cada qubit recebe uma porta Hadamard, que o deixa em superposição 50/50, e é medido. Cada medição vira um bit. A Entropy Assurance Layer testa esses bits antes de deixar que entrem numa chave criptográfica.</p>
   <div class="chips" id="chips"></div>
@@ -123,7 +123,8 @@ const wait = ms => new Promise(r => setTimeout(r, reduce ? 0 : ms));
 
 // cabeçalho
 const gravado = D.modo !== 'ao vivo';
-if (gravado){ document.getElementById('badge').classList.add('gravado'); document.getElementById('badgeTxt').textContent = 'gravado (ensaio)'; }
+if (gravado){ document.getElementById('badge').classList.add('gravado'); }
+document.getElementById('badgeTxt').textContent = gravado ? 'gravado (ensaio)' : 'ao vivo';
 const chips = [
   [D.backend, 'processador IBM'], [int(D.n_qubits), 'qubits'], [int(D.shots), 'disparos'],
   [int(D.n_bits), 'bits'],
@@ -207,11 +208,8 @@ function verdict(){
   const ok = D.qpu.aprovado, vb = document.getElementById('vbox');
   vb.className = 'vbox ' + (ok ? 'ok' : 'bad');
   vb.textContent = ok ? 'QPU: lote aprovado' : 'QPU: lote reprovado';
-  const pct = fmt(Math.abs(D.frac1-0.5)*100, 2);
-  const falhas = D.qpu.testes.filter(t=>!t.ok).map(t=>t.nome);
-  document.getElementById('vtext').innerHTML = ok
-    ? `<p>Os ${int(D.n_bits)} bits da QPU passaram nos 7 testes. Na EAL, este lote poderia entrar na mistura, <b>sempre junto</b> com uma fonte local, nunca sozinho.</p>`
-    : `<p>A fração de uns foi ${fmt(D.frac1,4)}: um desvio de ${pct} ponto percentual de 50/50. Parece nada, mas com ${int(D.n_bits)} bits ele é estatisticamente visível (z = ${fmt(D.z_total,1)}). Falhou em: ${falhas.join(', ')}.</p><p><b>A EAL exclui o lote</b>, registra o motivo no recibo e não deixa esses bits entrarem numa chave. É exatamente o papel dela: confiar na fonte só depois de testar.</p>`;
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  document.getElementById('vtext').innerHTML = D.veredito.map(p => `<p>${esc(p)}</p>`).join('');
   document.getElementById('hash').textContent = `job ${D.job_id} · calibração ${D.calibracao} · lote ${D.criado_em} · SHA3-256 do lote ${D.batch_hash}` + (D.duplicado_de ? ` · ATENÇÃO: bits idênticos a ${D.duplicado_de}` : (D.duplicado_verificado ? ' · bits diferentes de todos os lotes anteriores' : ''));
 }
 

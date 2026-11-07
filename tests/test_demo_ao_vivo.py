@@ -148,3 +148,33 @@ def test_run_ctrl_c_na_espera_explica_como_retomar(tmp_path, monkeypatch):
 
 def test_main_recusa_job_e_arquivo_juntos(capsys):
     assert demo.main(["--job", "x", "--arquivo", "y"]) == 2
+
+
+def _analisa(tmp_path, p1, seed=1):
+    npy = save_batch(_batch(p1=p1, seed=seed), "t", tmp_path)
+    return demo.analyze(npy, mode="gravado", quantum_seconds=5.0, wait_seconds=None,
+                        os_reader=_os_reader, edges=_heavy_hex_edges())
+
+
+def test_veredito_so_chama_de_visivel_quando_o_z_justifica(tmp_path):
+    d = _analisa(tmp_path, 0.53)
+    assert abs(d["z_total"]) >= demo.Z_VISIVEL
+    texto = " ".join(d["veredito"])
+    assert "estatisticamente visível" in texto and "Frequência (monobit)" in texto
+
+
+def test_veredito_reprovado_sem_desvio_nao_alega_visibilidade(tmp_path):
+    d = _analisa(tmp_path, 0.5)
+    d["qpu"] = {"aprovado": False, "testes": [
+        {"nome": "Repetição (RCT)", "ok": False}, {"nome": "Frequência (monobit)", "ok": True}]}
+    d["frac1"], d["z_total"] = 0.5002, 0.3
+    texto = " ".join(demo.verdict_paragraphs(d))
+    assert "estatisticamente visível" not in texto and "Falhou em: Repetição (RCT)." in texto
+    assert "não vem da frequência" in texto
+
+
+def test_veredito_aprovado_usa_a_contagem_real_de_testes(tmp_path):
+    d = _analisa(tmp_path, 0.5)
+    d["qpu"]["aprovado"] = True
+    texto = demo.verdict_paragraphs(d)[0]
+    assert f"nos {len(d['qpu']['testes'])} testes" in texto and "Falhou" not in texto

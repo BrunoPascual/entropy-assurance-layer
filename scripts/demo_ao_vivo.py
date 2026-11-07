@@ -115,6 +115,36 @@ def _test_rows(rep: Any) -> list[dict[str, Any]]:
     ]
 
 
+Z_VISIVEL = 2.576  # |z| a partir do qual o monobit reprova (p < 0,01, o mesmo limiar de _test_rows)
+
+
+def _pt(x: float, casas: int = 0) -> str:
+    """Número no formato pt-BR (milhar com ponto, decimal com vírgula), como o toLocaleString da página."""
+    s = f"{x:,.{casas}f}"
+    return s.replace(",", "\0").replace(".", ",").replace("\0", ".")
+
+
+def verdict_paragraphs(data: dict[str, Any]) -> list[str]:
+    """Texto do veredito da QPU, montado só com o que os testes de fato mostraram (texto puro, sem HTML)."""
+    qpu = data["qpu"]
+    n_bits, n_testes = data["n_bits"], len(qpu["testes"])
+    if qpu["aprovado"]:
+        return [f"Os {_pt(n_bits)} bits da QPU passaram nos {n_testes} testes. Na EAL, este lote poderia entrar "
+                "na mistura, sempre junto com uma fonte local, nunca sozinho."]
+    falhas = [t["nome"] for t in qpu["testes"] if not t["ok"]]
+    frac, z = data["frac1"], data["z_total"]
+    desvio = _pt(abs(frac - 0.5) * 100, 2)
+    if abs(z) >= Z_VISIVEL:
+        freq = (f"A fração de uns foi {_pt(frac, 4)}: um desvio de {desvio} ponto percentual de 50/50. "
+                f"Parece pouco, mas com {_pt(n_bits)} bits ele é estatisticamente visível (z = {_pt(z, 1)}).")
+    else:
+        freq = (f"A fração de uns foi {_pt(frac, 4)}, desvio de {desvio} ponto percentual de 50/50, "
+                f"dentro do esperado para {_pt(n_bits)} bits (z = {_pt(z, 1)}): a reprovação não vem da frequência.")
+    return [f"{freq} Falhou em: {', '.join(falhas)}.",
+            "A EAL exclui o lote, registra o motivo no recibo e não deixa esses bits entrarem numa chave. "
+            "É exatamente o papel dela: confiar na fonte só depois de testar."]
+
+
 def page_data(batch: Any, rep_qpu: Any, rep_os: Any, *, mode: str, quantum_seconds: float | None,
               wait_seconds: float | None, duplicate_of: str | None, edges: Sequence[tuple[int, int]]) -> dict[str, Any]:
     """Tudo o que a página mostra, só com tipos nativos. Nenhum segredo: bits públicos do lote, hashes, parâmetros."""
@@ -128,7 +158,7 @@ def page_data(batch: Any, rep_qpu: Any, rep_os: Any, *, mode: str, quantum_secon
     layout = chip_layout(max(phys) + 1, edges) if edges else {q: (float(q % 13), float(q // 13)) for q in phys}
     mosaic = m[: min(MOSAIC_SHOTS, shots)]
     frac1 = float(m.mean())
-    return {
+    data = {
         "modo": mode,
         "job_id": prm.get("job_id", ""),
         "backend": prm.get("backend", ""),
@@ -152,6 +182,8 @@ def page_data(batch: Any, rep_qpu: Any, rep_os: Any, *, mode: str, quantum_secon
         "qpu": {"aprovado": bool(rep_qpu.approved), "testes": _test_rows(rep_qpu)},
         "os": {"aprovado": bool(rep_os.approved), "testes": _test_rows(rep_os)},
     }
+    data["veredito"] = verdict_paragraphs(data)
+    return data
 
 
 # ---------------------------------------------------------------- HTML
