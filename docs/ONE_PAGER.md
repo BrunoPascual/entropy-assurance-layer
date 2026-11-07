@@ -1,46 +1,46 @@
 # Entropy Assurance Layer: one-pager
 
-*Protótipo de pesquisa de 9 dias (Bruno Pascual, novembro de 2026). Não é um produto e não tem certificação.*
+*9-day research prototype (Bruno Pascual, November 2026). Not a product and not certified.*
 
-## Problema
+## Problem
 
-Toda chave criptográfica nasce de números aleatórios. As falhas históricas de aleatoriedade foram de **fonte ou de semeadura**, não de algoritmo: o bug do OpenSSL no Debian (2008), chaves RSA repetidas em dispositivos de rede (2012), o gerador Dual_EC_DRBG sob suspeita de backdoor. Equipes de segurança raramente conseguem **mostrar** de onde veio a aleatoriedade de uma chave e que ela foi testada, e as auditorias (FIPS 140-3, NIST SP 800-90B) pedem essa evidência. A migração para criptografia pós-quântica não resolve isto: ML-KEM e ML-DSA também consomem aleatoriedade.
+Every cryptographic key is born from random numbers. Historical randomness failures have come from **the source or the seeding**, not from the algorithm: the OpenSSL bug in Debian (2008), repeated RSA keys in network devices (2012), the Dual_EC_DRBG generator under suspicion of a backdoor. Security teams can rarely **show** where a key's randomness came from and that it was tested, and audits (FIPS 140-3, NIST SP 800-90B) ask for that evidence. The migration to post-quantum cryptography does not solve this: ML-KEM and ML-DSA also consume randomness.
 
-## Solução
+## Solution
 
-Uma camada de software **neutra em relação à fonte**:
+A software layer that is **neutral with respect to the source**:
 
-1. aceita bits de qualquer fonte (sistema operacional, simulador, QPU real da IBM, ou um chip no futuro) por um adaptador;
-2. testa cada lote (RCT e APT do SP 800-90B, estimativa conservadora de min-entropia, três testes do SP 800-22, detector de replay);
-3. extrai (Toeplitz) e mistura (SHA3-512) só as fontes sem defeito visível, e **recusa gerar semente** se não houver ao menos uma fonte local aprovada;
-4. deriva ML-KEM-768 e ML-DSA-65 a partir da semente;
-5. emite um **recibo assinado (ML-DSA-65) e encadeado por hash**, só com hashes, que registra as fontes, os testes e o resultado de cada uma.
+1. accepts bits from any source (operating system, simulator, a real IBM QPU, or a chip in the future) through an adapter;
+2. tests each batch (RCT and APT from SP 800-90B, a conservative min-entropy estimate, three tests from SP 800-22, a replay detector);
+3. extracts (Toeplitz) and mixes (SHA3-512) only the sources with no visible defect, and **refuses to generate a seed** if there is not at least one approved local source;
+4. derives ML-KEM-768 and ML-DSA-65 from the seed;
+5. issues a **signed (ML-DSA-65), hash-chained receipt**, with only hashes, recording the sources, the tests, and each one's result.
 
-Mais um **estudo aberto e reproduzível** de como QPUs públicas se comportam como fonte de bits: dados e CSVs versionados, e cada número do relatório rastreável a um arquivo.
+Plus an **open, reproducible study** of how public QPUs behave as a bit source: versioned data and CSVs, with every number in the report traceable to a file.
 
-## O que os 9 dias mostraram
+## What the 9 days showed
 
-- Uma QPU real (`ibm_kingston`, 3 coletas, 6 lotes de 1,5 milhão de bits) **não passou** na porta de saúde: o viés é pequeno (0,4964 a 0,5048 de uns), mas com esse tamanho de lote ele é medível, e o sinal mudou entre coletas. Isso diz respeito ao tamanho do lote e ao critério, não prova má qualidade da QPU.
-- O sistema detecta viés, correlação, travamento e replay; um gerador pseudoaleatório disfarçado **passa**, porque os testes olham só a saída. O falso positivo na fonte `os` é de 2,6% a 3,6%.
-- Com XOR um adversário que vê a outra fonte escolhe a semente final e os testes não percebem; com hash isso não acontece, mas quem testa candidatos força k bits com 2^k tentativas.
-- Em tempo, a QPU gasta da ordem de 10 vezes mais segundos por megabit que a fonte `os`. Não é uma razão de dinheiro.
-- O CHSH foi só conferido em simulação e **não diz nada sobre a QPU real**.
+- A real QPU (`ibm_kingston`, 3 collections, 6 batches of 1.5 million bits) **did not pass** the health gate: the bias is small (0.4964 to 0.5048 fraction of ones), but at this batch size it is measurable, and the sign changed between collections. This speaks to the batch size and the criterion, not proof of the QPU's poor quality.
+- The system detects bias, correlation, stuck bits, and replay; a disguised pseudorandom generator **passes**, because the tests look only at the output. The false-positive rate on the `os` source is 2.6% to 3.6%.
+- With XOR, an adversary who sees the other source chooses the final seed and the tests don't notice; with hash this doesn't happen, but an adversary who tests candidates forces k bits with 2^k attempts.
+- In time, the QPU spends on the order of 10 times more seconds per megabit than the `os` source. It is not a ratio of money.
+- The CHSH check was only done in simulation and **says nothing about the real QPU**.
 
-## Mercado e concorrentes
+## Market and competitors
 
-O mercado de geração quântica de números aleatórios já existe e é de hardware ou serviço próprio: **Quantinuum Quantum Origin** (semente gerada em computador quântico, com refino local da entropia; validado no NIST SP 800-90B em abril de 2025), **ID Quantique** (chips e dispositivos QRNG, controlada pela IonQ desde maio de 2025, presente nos celulares Samsung Galaxy Quantum), Quside, QuintessenceLabs, Crypta Labs, KETS, Qrypt e Quantum eMotion. A EAL **não compete como fonte de bits quânticos**: um serviço em nuvem de QPU, como o testado aqui, mostrou-se lento, caro em tempo e sujeito à confiança no provedor.
+The market for quantum random number generation already exists and is built on hardware or a dedicated service: **Quantinuum Quantum Origin** (seed generated on a quantum computer, with local entropy refinement; validated against NIST SP 800-90B in April 2025), **ID Quantique** (QRNG chips and devices, controlled by IonQ since May 2025, present in Samsung Galaxy Quantum phones), Quside, QuintessenceLabs, Crypta Labs, KETS, Qrypt, and Quantum eMotion. The EAL **does not compete as a source of quantum bits**: a cloud QPU service, like the one tested here, proved slow, expensive in time, and dependent on trusting the provider.
 
-**Onde a EAL pode ter espaço (hipóteses a validar com clientes, sem números de mercado levantados):** equipes que precisam de **evidência por chave** da origem e do teste da aleatoriedade, que misturam várias fontes (inclusive de fornecedores de QRNG) e querem uma camada de verificação independente do fornecedor, e quem se prepara para a migração pós-quântica e para auditorias.
+**Where the EAL might have room (hypotheses to validate with customers, no market figures gathered):** teams that need **per-key evidence** of the origin and testing of randomness, that mix several sources (including from QRNG vendors) and want a verification layer independent of the provider, and those preparing for the post-quantum migration and for audits.
 
-| Diferencial | Observação honesta |
+| Differentiator | Honest note |
 |---|---|
-| Neutra em relação à fonte | Qualquer QRNG pode entrar como fonte; não substitui o QRNG |
-| Recibo de auditoria por chave | Integridade e ordem; **não** garante a entropia |
-| Dados abertos sobre QPUs públicas | Uma QPU, 3 coletas: pequeno, mas reproduzível |
-| Derivação PQC integrada | Python puro, sem tempo constante |
+| Neutral with respect to the source | Any QRNG can enter as a source; it does not replace the QRNG |
+| Audit receipt per key | Integrity and ordering; it does **not** guarantee the entropy |
+| Open data on public QPUs | One QPU, 3 collections: small, but reproducible |
+| Integrated PQC derivation | Pure Python, not constant-time |
 
-## Roadmap (resumo)
+## Roadmap (summary)
 
-Chip QRNG local como fonte de primeira classe; estimadores completos do SP 800-90B e testes de saúde na linha de produção; porte do núcleo para C ou Rust com bibliotecas PQC auditadas; certificação só depois de definir o caminho (SP 800-90B, FIPS 140-3); mais QPUs e mais coletas. Detalhes e ordem em [ROADMAP.md](ROADMAP.md).
+A local QRNG chip as a first-class source; complete SP 800-90B estimators and health tests in a production line; porting the core to C or Rust with audited PQC libraries; certification only after settling on a path (SP 800-90B, FIPS 140-3); more QPUs and more collections. Details and order in [ROADMAP.md](ROADMAP.md).
 
-Relatório completo, com limitações e faixas de incerteza: [../relatorio/RELATORIO.md](../relatorio/RELATORIO.md).
+Full report, with limitations and uncertainty ranges: [../relatorio/RELATORIO.md](../relatorio/RELATORIO.md).

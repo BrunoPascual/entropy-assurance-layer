@@ -1,40 +1,40 @@
-# Roadmap pós-9 dias
+# Roadmap after the 9 days
 
-Estado de partida: protótipo de pesquisa em Python, com fontes `os`, simulador e QPU IBM; testes de saúde; extrator Toeplitz; mixer SHA3-512 fail-closed; derivação ML-KEM-768 e ML-DSA-65; recibo assinado e encadeado; painel e relatório. **Nada abaixo está feito.** A ordem reflete o que reduz mais risco por esforço, e as estimativas de duração são palpites a revisar.
+Starting state: a research prototype in Python, with `os`, simulator, and IBM QPU sources; health tests; a Toeplitz extractor; a fail-closed SHA3-512 mixer; ML-KEM-768 and ML-DSA-65 derivation; a signed, chained receipt; a dashboard and a report. **None of the below is done.** The order reflects what reduces the most risk per effort, and the duration estimates are guesses to be revised.
 
-## 1. Fechar o que ficou parcial (semanas)
+## 1. Closing what was left partial (weeks)
 
-- **E1:** comparar a coleta 3 com a coleta 2 e investigar a deriva (poucos qubits? troca de calibração?). Mais coletas em outro backend e em outros dias; com 3 coletas em 2 dias não há como falar de "as QPUs".
-- **E5:** CHSH na QPU real (a etapa B), com o par de qubits escolhido por regra fixada antes da coleta. Continua sendo conferência, não certificação.
-- **Estimadores:** implementar o conjunto completo do SP 800-90B (hoje há só os dois estimadores do tipo "valor mais comum") e tratar bits não independentes. O estimador atual supõe independência, e a garantia de extração dos recibos depende dele.
-- **Poder dos experimentos:** E4 com mais sequências por célula (as células de `adv_forca` têm 10) e E3 com mais tamanhos de job para ajustar o custo marginal.
+- **E1:** compare collection 3 against collection 2 and investigate the drift (few qubits? a calibration change?). More collections on another backend and on other days; with 3 collections over 2 days there is no way to talk about "QPUs" in general.
+- **E5:** CHSH on the real QPU (stage B), with the qubit pair chosen by a rule fixed before the collection. This remains a sanity check, not a certification.
+- **Estimators:** implement the full SP 800-90B set (today there are only the two "most common value" estimators) and handle non-independent bits. The current estimator assumes independence, and the receipts' extraction guarantee depends on it.
+- **Experiment power:** E4 with more sequences per cell (the `adv_forca` cells have 10) and E3 with more job sizes to fit the marginal cost.
 
-## 2. Chip QRNG local (alguns meses)
+## 2. Local QRNG chip (a few months)
 
-- Adaptador para um chip ou módulo QRNG real (por exemplo via USB ou SPI) implementando o contrato de `eal/sources/base.py`; os testes de saúde contínuos (RCT e APT) rodam sobre o fluxo do chip.
-- Escolher o chip depois de ler a documentação de certificação do fornecedor, não antes. Medir viés, correlação e deriva por temperatura e por lote do chip, como foi feito com a QPU.
-- Política da mistura: a fonte local de hardware passa a ser a primeira classe; a QPU em nuvem fica como fonte adicional, nunca única.
+- An adapter for a real QRNG chip or module (for example, over USB or SPI) implementing the contract in `eal/sources/base.py`; the continuous health tests (RCT and APT) run over the chip's stream.
+- Choose the chip after reading the vendor's certification documentation, not before. Measure bias, correlation, and drift by temperature and by chip batch, as was done with the QPU.
+- Mixing policy: the local hardware source becomes first-class; the cloud QPU stays as an additional source, never the only one.
 
-## 3. Porte para C ou Rust (alguns meses)
+## 3. Porting to C or Rust (a few months)
 
-- Núcleo (testes de saúde, extrator, mixer, derivação) em C ou Rust, com **bibliotecas PQC auditadas e em tempo constante** no lugar de `kyber-py` e `dilithium-py`.
-- Manter o Python como camada de análise. Reaproveitar os 3.200 testes e os vetores de teste conhecidos (KAT) como suíte de conformidade do porte.
-- Gerenciar a chave do emissor fora do disco em texto claro (hoje ela fica sem criptografia em `keys/`).
+- Core (health tests, extractor, mixer, derivation) in C or Rust, with **audited, constant-time PQC libraries** in place of `kyber-py` and `dilithium-py`.
+- Keep Python as the analysis layer. Reuse the 3,200 tests and the known-answer test vectors (KAT) as the port's conformance suite.
+- Manage the issuer's key outside the disk in plain text (today it sits unencrypted in `keys/`).
 
-## 4. Certificação (um a dois anos, depende de parceiros)
+## 4. Certification (one to two years, depends on partners)
 
-- Definir o alvo: SP 800-90B (fonte de entropia) e FIPS 140-3 (módulo criptográfico). Isso exige um laboratório acreditado, um módulo de fronteira definida e documentação formal; nada disso existe hoje.
-- Antes de gastar nisso, validar com potenciais clientes se o recibo por chave é o que eles pedem, ou se querem só a camada de testes.
-- Enquanto não houver certificação, manter a linguagem do `THREAT_MODEL.md`: sem alegação de conformidade e sem alegação de origem quântica.
+- Decide on the target: SP 800-90B (entropy source) and FIPS 140-3 (cryptographic module). This requires an accredited lab, a module with a defined boundary, and formal documentation; none of that exists today.
+- Before spending on this, validate with potential customers whether the per-key receipt is what they ask for, or whether they want only the testing layer.
+- While there is no certification, keep the language of `THREAT_MODEL.md`: no claim of conformance and no claim of quantum origin.
 
-## 5. Produto, se o problema se confirmar
+## 5. Product, if the problem is confirmed
 
-- API (FastAPI) para pedir semente e recibo, e verificação pública de recibos. Cortada do prazo de 9 dias.
-- Serviço de verificação de cadeia e publicação periódica da cabeça da cadeia fora do log (a verificação já aceita uma cabeça esperada).
-- Integração com gerenciadores de chaves e com HSMs.
+- API (FastAPI) to request a seed and a receipt, and public receipt verification. Cut from the 9-day schedule.
+- A chain-verification service and periodic publication of the chain's head outside the log (verification already accepts an expected head).
+- Integration with key managers and with HSMs.
 
-## Riscos que o roadmap precisa vigiar
+## Risks the roadmap needs to watch
 
-- O provedor da QPU conhece os bits que gerou; por isso a QPU nunca é a única fonte de uma semente.
-- Testar a saída não detecta um gerador pseudoaleatório disfarçado: a confiança na fonte tem que vir também do projeto físico e da cadeia de fornecimento.
-- Concorrentes com validação formal já existem; o espaço da EAL é a camada neutra de evidência, não a fonte.
+- The QPU provider knows the bits it generated; that is why the QPU is never the only source of a seed.
+- Testing the output does not detect a disguised pseudorandom generator: trust in the source also has to come from the physical design and the supply chain.
+- Competitors with formal validation already exist; the EAL's space is the neutral layer of evidence, not the source.
