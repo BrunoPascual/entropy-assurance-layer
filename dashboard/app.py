@@ -97,11 +97,12 @@ try:
             v = data.verify_last(rec_dir, keys_dir)
             if v.ok:
                 st.success(f"Recibo e cadeia válidos ({v.chain_length} recibos). Cabeça: {v.head}")
+                st.caption("Esta conferência não detecta a remoção dos últimos recibos: compare a cabeça acima com uma cabeça guardada fora do log (eal verify --expected-head).")
             else:
                 st.error("Verificação reprovada:\n" + "\n".join(f"- {m}" for m in v.reasons))
         except (OSError, ValueError) as e:
             st.error(f"Não foi possível verificar: {type(e).__name__}")
-    st.caption("O recibo traz só hashes. Os recibos reais ficam fora do Git; a cadeia de demonstração é publicada no Dia 9.")
+    st.caption("O recibo traz só hashes. Os recibos reais ficam fora do Git; a cadeia de demonstração está em demo/ (README).")
 except FileNotFoundError as e:
     st.info(f"Nenhum recibo para mostrar: {e}")
 

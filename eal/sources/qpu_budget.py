@@ -186,7 +186,7 @@ def _cell(value: Any) -> str:
     """Texto de uma célula do CSV."""
     if value is None:
         return ""
-    return repr(value) if isinstance(value, float) else str(value)
+    return repr(float(value)) if isinstance(value, float) else str(value)
 
 
 def format_row(entry: UsageEntry) -> str:

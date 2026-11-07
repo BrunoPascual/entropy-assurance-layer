@@ -453,3 +453,15 @@ def test_ponta_a_ponta_log_em_disco_e_guarda(tmp_path):
     entries, problems = read_log(path)
     d = check(entries, reserve=60, remote=100, log_problems=problems)
     assert d.allowed and d.window_committed_seconds == 4
+
+
+def test_format_row_grava_numpy_float_como_numero_puro():
+    import numpy as np
+
+    e = sub("a")
+    e = UsageEntry(ts=e.ts, event="submitted", job_id="j1", backend="ibm_kingston", qubits=156, shots=100,
+                   reserve_seconds=np.float64(10.0))
+    row = format_row(e)
+    assert "np.float64" not in row and "10.0" in row
+    parsed, problems = parse_usage_log(format_header() + row)
+    assert problems == [] and parsed[0].reserve_seconds == 10.0
